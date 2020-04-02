@@ -12,19 +12,22 @@ type Value interface {
 	// parsed/converted correctly into the underlying type. For 'switch' types Set() will be called
 	// with no arguments. Types that require only a single argument (Int, Float64 etc. for example)
 	// would care only about the 0th argument and ignore the rest. Types that implement some kind of
-	// list/slice/collection (IntList, Float64List for example) would normaly want to parse all given
-	// arguments.
+	// list/slice/collection (IntList, Float64List for example) would normally want to parse all
+	// given arguments.
 	Set(...string) error
+
+	// Get should return the value of underlying variable. The returned value's type should be the
+	// same as underlying type
 	Get() interface{}
+
+	// String returns the current value of underlying variable as a string. This is useful for showing
+	// default values in the help message.
 	String() string
 }
 
-// NewValue checks v's type and returns a compatible type which also
-// implements ArgValue interface. All supported types are pointer to some type.
-// It returns error if v is of unknown or unsupported type.
+// NewValue takes address of a variable and returns a compatible Value type so that it can be used
+// with this package. It returns error if there is no compatible type for the variable.
 func NewValue(v interface{}) (Value, error) {
-	// if the underlying pointer type is one of the supported types then convert it to a
-	// ArgValue compatible type.
 	switch addr := v.(type) {
 	case Value: // the type itself implements Value interface hence simply return addr
 		return addr, nil
@@ -49,7 +52,7 @@ func NewValue(v interface{}) (Value, error) {
 	}
 }
 
-// Bool type represents a bool value and also implements ArgValue interface
+// Bool type represents a bool value and also implements Value interface
 type Bool bool
 
 func NewBool(p *bool) *Bool {
@@ -73,7 +76,7 @@ func (b *Bool) Get() interface{} { return bool(*b) }
 
 func (b *Bool) String() string { return fmt.Sprint(*b) }
 
-// Bool type represents a bool value and also implements ArgValue interface
+// Bool type represents a bool value and also implements Value interface
 type BoolList []bool
 
 func NewBoolList(p *[]bool) *BoolList {
@@ -145,7 +148,7 @@ func (il *IntList) Get() interface{} { return []int(*il) }
 
 func (il *IntList) String() string { return fmt.Sprint(*il) }
 
-// String type represents a string value and implements ArgValue interface
+// String type represents a string value and implements Value interface
 type String string
 
 func NewString(p *string) *String {
@@ -164,7 +167,7 @@ func (s *String) Get() interface{} { return string(*s) }
 
 func (s *String) String() string { return fmt.Sprint(*s) }
 
-// StringList type represents a list string value and implements ArgValue interface
+// StringList type represents a list string value and implements Value interface
 type StringList []string
 
 func NewStringList(p *[]string) *StringList {
@@ -183,7 +186,7 @@ func (sl *StringList) Get() interface{} { return []string(*sl) }
 
 func (sl *StringList) String() string { return fmt.Sprint(*sl) }
 
-// Float64 represents a float64 value and also implements ArgValue interface
+// Float64 represents a float64 value and also implements Value interface
 type Float64 float64
 
 func NewFloat64(p *float64) *Float64 {
@@ -206,7 +209,7 @@ func (f *Float64) Get() interface{} { return float64(*f) }
 
 func (f *Float64) String() string { return strconv.FormatFloat(float64(*f), 'g', -1, 64) }
 
-// Float64List type representing a list of float64 values and implements ArgValue interface
+// Float64List type representing a list of float64 values and implements Value interface
 type Float64List []float64
 
 func NewFloat64List(p *[]float64) *Float64List {
