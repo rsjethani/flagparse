@@ -5,7 +5,15 @@ import (
 	"strconv"
 )
 
+// The Value interface specifies desired behavior that a type must have in order to be used with
+// this package. Please see the implementation of Bool, Int etc. types in this pacakge as examples.
 type Value interface {
+	// Set takes a variable number of arguments and returns error if any of the arguments cannot be
+	// parsed/converted correctly into the underlying type. For 'switch' types Set() will be called
+	// with no arguments. Types that require only a single argument (Int, Float64 etc. for example)
+	// would care only about the 0th argument and ignore the rest. Types that implement some kind of
+	// list/slice/collection (IntList, Float64List for example) would normaly want to parse all given
+	// arguments.
 	Set(...string) error
 	Get() interface{}
 	String() string
