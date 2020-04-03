@@ -17,11 +17,6 @@ const (
 	packageTag           string = "flagparse"
 )
 
-type posFlagWithName struct {
-	name string
-	flag *Flag
-}
-
 type FlagSet struct {
 	continueOnError bool
 	name            string
@@ -40,10 +35,10 @@ func (fs *FlagSet) SetOutput(w io.Writer) {
 	}
 }
 
-func (fs *FlagSet) addHelp() {
-	var help bool
-	fs.Add(NewSwitchFlag("help", NewBool(&help), "Show this help message and exit"))
-}
+// func (fs *FlagSet) addHelp() {
+// 	var help bool
+// 	fs.Add(NewSwitchFlag("help", NewBool(&help), "Show this help message and exit"))
+// }
 
 func NewFlagSet() *FlagSet {
 	fs := &FlagSet{
@@ -53,7 +48,7 @@ func NewFlagSet() *FlagSet {
 		name:          os.Args[0],
 		CmdArgs:       os.Args[1:],
 	}
-	fs.addHelp()
+	// fs.addHelp()
 	return fs
 }
 
@@ -131,6 +126,7 @@ func (fs *FlagSet) defaultUsage() {
 
 	// TODO: show list of opt args in sorted order
 	fmt.Fprint(out, "\n\nOptional Arguments:")
+	fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptFlagPrefix, "help", "Show this help message and exit")
 	for name, arg := range fs.optFlags {
 		if arg.isSwitch() {
 			fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptFlagPrefix, name, arg.help)

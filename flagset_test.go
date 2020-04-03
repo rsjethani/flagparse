@@ -75,7 +75,7 @@ func TestNewArgSetFromValidInputs(t *testing.T) {
 	if err != nil {
 		t.Errorf("testing: NewArgSet(%#v); expected: non-nil *ArgSet and nil error; got: %v", args1, err)
 	}
-	if len(argset.posFlags) != 0 || len(argset.optFlags) != 1 {
+	if len(argset.posFlags) != 0 || len(argset.optFlags) != 0 {
 		t.Errorf("testing: NewArgSet(%#v); expected: no arguments except --help in argset; got: %#v", &args1, argset)
 	}
 
