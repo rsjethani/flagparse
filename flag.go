@@ -5,14 +5,17 @@ import (
 )
 
 type Flag struct {
-	value      Value
-	help       string
+	// TODO: convert to string for patterns like '*', '+' etc.
+	nArgs      int
 	positional bool
-	nArgs      int // TODO: convert to string for patterns like '*', '+' etc.
+	value      Value
+	name       string
+	help       string
 }
 
-func NewPosFlag(value Value, help string) *Flag {
+func NewPosFlag(name string, value Value, help string) *Flag {
 	return &Flag{
+		name:       name,
 		nArgs:      1,
 		value:      value,
 		help:       help,
@@ -20,8 +23,9 @@ func NewPosFlag(value Value, help string) *Flag {
 	}
 }
 
-func NewOptFlag(value Value, help string) *Flag {
+func NewOptFlag(name string, value Value, help string) *Flag {
 	return &Flag{
+		name:       name,
 		nArgs:      1,
 		value:      value,
 		help:       help,
@@ -29,13 +33,10 @@ func NewOptFlag(value Value, help string) *Flag {
 	}
 }
 
-func NewSwitchFlag(value Value, help string) *Flag {
-	return &Flag{
-		nArgs:      0,
-		value:      value,
-		help:       help,
-		positional: false,
-	}
+func NewSwitchFlag(name string, value Value, help string) *Flag {
+	fl := NewOptFlag(name, value, help)
+	fl.nArgs = 0
+	return fl
 }
 
 func (fl *Flag) isSwitch() bool {

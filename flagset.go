@@ -30,8 +30,8 @@ type FlagSet struct {
 	Usage           func()
 	usageOut        io.Writer
 	OptFlagPrefix   string
+	posFlags        []*Flag
 	optFlags        map[string]*Flag
-	posFlags        []posFlagWithName
 }
 
 func (fs *FlagSet) SetOutput(w io.Writer) {
@@ -42,7 +42,7 @@ func (fs *FlagSet) SetOutput(w io.Writer) {
 
 func (fs *FlagSet) addHelp() {
 	var help bool
-	fs.Add("help", NewSwitchFlag(NewBool(&help), "Show this help message and exit"))
+	fs.Add(NewSwitchFlag("help", NewBool(&help), "Show this help message and exit"))
 }
 
 func NewFlagSet() *FlagSet {
@@ -95,26 +95,26 @@ func NewFlagSetFrom(src interface{}) (*FlagSet, error) {
 			return nil, fmt.Errorf("Error while creating flag from field '%s': %s", fieldType.Name, err)
 		}
 
-		flag, name, err := newFlagFromTags(val, fieldType.Name, structTags)
+		flag, err := newFlagFromTags(val, fieldType.Name, structTags)
 		if err != nil {
 			return nil, fmt.Errorf("Error while creating flag from field '%s': %s", fieldType.Name, err)
 		}
 
-		fs.Add(name, flag)
+		fs.Add(flag)
 	}
 
 	return fs, nil
 }
 
-func (fs *FlagSet) Add(name string, fl *Flag) {
+func (fs *FlagSet) Add(fl *Flag) {
 	if fl == nil {
 		return
 	}
 	if fl.positional {
-		fs.posFlags = append(fs.posFlags, posFlagWithName{name: name, flag: fl})
+		fs.posFlags = append(fs.posFlags, fl)
 		return
 	}
-	fs.optFlags[fs.OptFlagPrefix+name] = fl
+	fs.optFlags[fl.name] = fl
 }
 
 func (fs *FlagSet) defaultUsage() {
@@ -125,19 +125,19 @@ func (fs *FlagSet) defaultUsage() {
 	}
 	fmt.Fprint(out, "\nPositional Arguments:")
 	for _, p := range fs.posFlags {
-		val := p.flag.value.Get()
-		fmt.Fprintf(out, "\n  %[1]s  %[2]T\n\t%[3]s  (Default: %[2]v)", p.name, val, p.flag.help, val)
+		val := p.value.Get()
+		fmt.Fprintf(out, "\n  %[1]s  %[2]T\n\t%[3]s  (Default: %[2]v)", p.name, val, p.help, val)
 	}
 
 	// TODO: show list of opt args in sorted order
 	fmt.Fprint(out, "\n\nOptional Arguments:")
 	for name, arg := range fs.optFlags {
 		if arg.isSwitch() {
-			fmt.Fprintf(out, "\n  %[1]s\n\t%s", name, arg.help)
+			fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptFlagPrefix, name, arg.help)
 			continue
 		}
 		val := arg.value.Get()
-		fmt.Fprintf(out, "\n  %[1]s  %[2]T\n\t%[3]s  (Default: %[2]v)", name, val, arg.help)
+		fmt.Fprintf(out, "\n  %s%s  %[3]T\n\t%s  (Default: %[3]v)", fs.OptFlagPrefix, name, val, arg.help)
 	}
 
 	fmt.Fprint(out, "\n")
@@ -179,7 +179,7 @@ func (fs *FlagSet) parse() error {
 
 			// if curArg starts with the configured prefix then process it as an optional arg
 			if strings.HasPrefix(curArg, fs.OptFlagPrefix) {
-				if _, found := fs.optFlags[curArg]; found {
+				if _, found := fs.optFlags[curArg[len(fs.OptFlagPrefix):]]; found {
 					if visited[curArg] { // if curArg is defined but already processed then return error
 						return fmt.Errorf("option '%s' already given", curArg)
 					}
@@ -201,7 +201,7 @@ func (fs *FlagSet) parse() error {
 			// is an undefined positional arg
 			return fmt.Errorf("Unknown positional flag: %s", curArg)
 		case statePosFlag:
-			if err := fs.posFlags[posIndex].flag.value.Set(curArg); err != nil {
+			if err := fs.posFlags[posIndex].value.Set(curArg); err != nil {
 				return fmt.Errorf("error while setting option '%s': %s", fs.posFlags[posIndex].name, err)
 			}
 			visited[fs.posFlags[posIndex].name] = true
@@ -209,32 +209,33 @@ func (fs *FlagSet) parse() error {
 			argsIndex++
 			curState = stateInit
 		case stateOptFlag:
-			if fs.optFlags[curArg].nArgs == 0 {
+			flName := curArg[len(fs.OptFlagPrefix):]
+			if fs.optFlags[flName].nArgs == 0 {
 				if curArg == "--help" {
 					fs.usage()
 					return nil
 				}
-				fs.optFlags[curArg].value.Set()
+				fs.optFlags[flName].value.Set()
 				argsIndex++
-			} else if fs.optFlags[curArg].nArgs < 0 {
-				if err := fs.optFlags[curArg].value.Set(argsToParse[argsIndex+1:]...); err != nil {
+			} else if fs.optFlags[flName].nArgs < 0 {
+				if err := fs.optFlags[flName].value.Set(argsToParse[argsIndex+1:]...); err != nil {
 					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
 				}
 				argsIndex = len(argsToParse)
 
 			} else {
 				inp := []string{}
-				for i := 1; i <= fs.optFlags[curArg].nArgs; i++ {
+				for i := 1; i <= fs.optFlags[flName].nArgs; i++ {
 					v := getArg(i + argsIndex)
 					if v == "" {
-						return fmt.Errorf("invalid no. of arguments for option '%s'; required: %d, given: %d", curArg, fs.optFlags[curArg].nArgs, i-1)
+						return fmt.Errorf("invalid no. of arguments for option '%s'; required: %d, given: %d", curArg, fs.optFlags[flName].nArgs, i-1)
 					}
 					inp = append(inp, v)
 				}
-				if err := fs.optFlags[curArg].value.Set(inp...); err != nil {
+				if err := fs.optFlags[flName].value.Set(inp...); err != nil {
 					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
 				}
-				argsIndex += fs.optFlags[curArg].nArgs + 1
+				argsIndex += fs.optFlags[flName].nArgs + 1
 			}
 			curState = stateInit
 		case stateNoArgsLeft:

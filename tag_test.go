@@ -83,22 +83,22 @@ func TestParseTagsValidKeyValues(t *testing.T) {
 
 func TestNewArgFromTagsInvalidInput(t *testing.T) {
 	testKVs := "nargs=123abc"
-	if arg, _, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
+	if arg, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
 		t.Errorf("testing: newArgFromTags(%#v); expected: non-nil error since key-value parsing should fail for invalid key/value; got: %#v, %#v ", testKVs, arg, err)
 	}
 
 	testKVs = "type=pos,nargs=0"
-	if arg, _, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
+	if arg, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
 		t.Errorf("testing: newArgFromTags(%#v); expected: non-nil error since nargs cannot be 0 for type=pos; got: %#v, %#v ", testKVs, arg, err)
 	}
 
 	testKVs = "type=switch,nargs=10"
-	if arg, _, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
+	if arg, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
 		t.Errorf("testing: newArgFromTags(%#v); expected: non-nil error since nargs can only be 0 for type=switch; got: %#v, %#v ", testKVs, arg, err)
 	}
 
 	testKVs = "nargs=9999999999999999999999999"
-	if arg, _, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
+	if arg, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
 		t.Errorf("testing: newArgFromTags(%#v); expected: non-nil error since nargs value overflows int size; got: %#v, %#v ", testKVs, arg, err)
 	}
 }
@@ -107,11 +107,11 @@ func TestNewArgFromTagsValidInput(t *testing.T) {
 	testValue := NewInt(new(int))
 
 	testKVs := "help=help message"
-	if arg, name, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
+	if arg, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
 		t.Errorf("testing: newArgFromTags(%s); expected: non error since empty key-values is a valid input; got: %#v, %#v", testKVs, arg, err)
 	} else {
-		if name != "field1" {
-			t.Errorf("testing: newArgFromTags(%s); expected: name==field1; got: %s", testKVs, name)
+		if arg.name != "field1" {
+			t.Errorf("testing: newArgFromTags(%s); expected: name==field1; got: %s", testKVs, arg.name)
 		}
 		if arg.positional {
 			t.Errorf("testing: newArgFromTags(%s); expected: arg.positional==false; got: %v", testKVs, arg.positional)
@@ -128,21 +128,18 @@ func TestNewArgFromTagsValidInput(t *testing.T) {
 	}
 
 	testKVs = "name=hello,help=help message"
-	if arg, name, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
+	if arg, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
 		t.Errorf("testing: newArgFromTags(%s); expected: non error since empty key-values is a valid input; got: %#v, %#v", testKVs, arg, err)
 	} else {
-		if name != "hello" {
-			t.Errorf("testing: newArgFromTags(%s); expected: name==hello; got: %s", testKVs, name)
+		if arg.name != "hello" {
+			t.Errorf("testing: newArgFromTags(%s); expected: name==hello; got: %s", testKVs, arg.name)
 		}
 	}
 
 	testKVs = "type=switch,help=help message"
-	if arg, _, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
+	if arg, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
 		t.Errorf("testing: newArgFromTags(nil,\"Field1\",%s); expected: non error; got: %#v, %#v", testKVs, arg, err)
 	} else {
-		// if name != "hello" {
-		// 	t.Errorf("testing: newArgFromTags(%s); expected: name==hello; got: %s", testKVs, name)
-		// }
 		if !arg.isSwitch() {
 			t.Errorf("testing: newArgFromTags(%s); expected: arg.positional==false; got: %v", testKVs, arg.positional)
 		}
@@ -155,13 +152,13 @@ func TestNewArgFromTagsValidInput(t *testing.T) {
 	}
 
 	testKVs = "type=switch,help=help message,nargs=123"
-	if arg, _, err := newFlagFromTags(testValue, "Field1", testKVs); arg != nil || err == nil {
+	if arg, err := newFlagFromTags(testValue, "Field1", testKVs); arg != nil || err == nil {
 		t.Errorf("testing: newArgFromTags(nil,\"Field1\",%s); expected: error; got: %#v, %#v", testKVs, arg, err)
 	}
 
 	// Test explicit opt type
 	testKVs = "type=opt,help=help message"
-	if arg, _, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
+	if arg, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
 		t.Errorf("testing: newArgFromTags(nil,\"Field1\",%s); expected: non error; got: %#v, %#v", testKVs, arg, err)
 	} else {
 		if arg.positional {
@@ -180,7 +177,7 @@ func TestNewArgFromTagsValidInput(t *testing.T) {
 
 	// Test explicit opt type with nargs
 	testKVs = "type=opt,help=help message,nargs=123"
-	if arg, _, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
+	if arg, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
 		t.Errorf("testing: newArgFromTags(nil,\"Field1\",%s); expected: non error; got: %#v, %#v", testKVs, arg, err)
 	} else {
 		if arg.nArgs != 123 {
@@ -190,7 +187,7 @@ func TestNewArgFromTagsValidInput(t *testing.T) {
 
 	// Test pos type
 	testKVs = "type=pos,help=help message"
-	if arg, _, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
+	if arg, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
 		t.Errorf("testing: newArgFromTags(nil,\"Field1\",%s); expected: non error; got: %#v, %#v", testKVs, arg, err)
 	} else {
 		if !arg.positional {
@@ -209,7 +206,7 @@ func TestNewArgFromTagsValidInput(t *testing.T) {
 
 	// Test pos type with nargs
 	testKVs = "type=pos,help=help message,nargs=123"
-	if arg, _, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
+	if arg, err := newFlagFromTags(testValue, "Field1", testKVs); arg == nil || err != nil {
 		t.Errorf("testing: newArgFromTags(nil,\"Field1\",%s); expected: non error; got: %#v, %#v", testKVs, arg, err)
 	} else {
 		if arg.nArgs != 123 {

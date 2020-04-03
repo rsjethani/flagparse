@@ -20,19 +20,20 @@ func TestNewFlagSet(t *testing.T) {
 
 func TestAddFlagToFlagSet(t *testing.T) {
 	fs := NewFlagSet()
-
-	fs.Add("dummy", nil)
+	fs.Add(nil)
 	if len(fs.posFlags) != 0 || fs.optFlags["--dummy"] != nil {
 		t.Errorf(`testing: argset.Add("dummy", nil); expected: no positional/optional flag named 'dummy should get added; got: 'dummy' got added`)
 	}
 
-	fs.Add("pos1", NewPosFlag(nil, ""))
-	if len(fs.posFlags) == 0 || fs.posFlags[0].name != "pos1" {
+	fs = NewFlagSet()
+	fs.Add(NewPosFlag("", nil, ""))
+	if len(fs.posFlags) == 0 {
 		t.Errorf(`testing: argset.AddArgument("pos1", NewPosArg(nil, "")); expected: argset.posArgs[0].name == "pos1"; got: len(argset.posArgs) == 0`)
 	}
 
-	fs.Add("opt1", NewOptFlag(nil, ""))
-	if fs.optFlags["--opt1"] == nil {
+	fs = NewFlagSet()
+	fs.Add(NewOptFlag("", nil, ""))
+	if len(fs.optFlags) == 0 {
 		t.Errorf(`testing: argset.AddArgument("opt1", NewOptArg(nil, "")); expected: argset.optArgs["opt1"] != nil; got: argset.optArgs["opt1"] == nil`)
 	}
 }

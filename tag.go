@@ -70,10 +70,10 @@ func parseTags(structTags string) (map[string]string, error) {
 	return tagValues, nil
 }
 
-func newFlagFromTags(value Value, fieldName string, structTags string) (*Flag, string, error) {
+func newFlagFromTags(value Value, fieldName string, structTags string) (*Flag, error) {
 	tags, err := parseTags(structTags)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	// if "name" not specified then simply use field's name in lower case
@@ -84,28 +84,28 @@ func newFlagFromTags(value Value, fieldName string, structTags string) (*Flag, s
 	var newFlag *Flag
 	switch tags["type"] {
 	case "pos":
-		newFlag = NewPosFlag(value, tags["help"])
+		newFlag = NewPosFlag(tags["name"], value, tags["help"])
 	case "switch":
-		newFlag = NewSwitchFlag(value, tags["help"])
+		newFlag = NewSwitchFlag(tags["name"], value, tags["help"])
 	case "opt", "":
-		newFlag = NewOptFlag(value, tags["help"])
+		newFlag = NewOptFlag(tags["name"], value, tags["help"])
 	}
 
 	if tags["nargs"] != "" {
 		if newFlag.isSwitch() {
-			return nil, "", fmt.Errorf("nargs can only be 0 for type=switch")
+			return nil, fmt.Errorf("nargs can only be 0 for type=switch")
 		}
 
 		nargs, err := strconv.ParseInt(tags["nargs"], 0, strconv.IntSize)
 		if err != nil {
-			return nil, "", formatParseError(tags["nargs"], fmt.Sprintf("%T", int(1)), err)
+			return nil, formatParseError(tags["nargs"], fmt.Sprintf("%T", int(1)), err)
 		}
 
 		err = newFlag.SetNArgs(int(nargs))
 		if err != nil {
-			return nil, "", err
+			return nil, err
 		}
 	}
 
-	return newFlag, tags["name"], nil
+	return newFlag, nil
 }
