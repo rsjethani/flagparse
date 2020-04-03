@@ -177,6 +177,11 @@ func (fs *FlagSet) parse() error {
 			}
 			curArg = arg
 
+			if curArg == "--help" {
+				fs.usage()
+				os.Exit(0)
+			}
+
 			// if curArg starts with the configured prefix then process it as an optional arg
 			if strings.HasPrefix(curArg, fs.OptFlagPrefix) {
 				if _, found := fs.optFlags[curArg[len(fs.OptFlagPrefix):]]; found {
@@ -211,10 +216,6 @@ func (fs *FlagSet) parse() error {
 		case stateOptFlag:
 			flName := curArg[len(fs.OptFlagPrefix):]
 			if fs.optFlags[flName].nArgs == 0 {
-				if curArg == "--help" {
-					fs.usage()
-					return nil
-				}
 				fs.optFlags[flName].value.Set()
 				argsIndex++
 			} else if fs.optFlags[flName].nArgs < 0 {
@@ -222,7 +223,6 @@ func (fs *FlagSet) parse() error {
 					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
 				}
 				argsIndex = len(argsToParse)
-
 			} else {
 				inp := []string{}
 				for i := 1; i <= fs.optFlags[flName].nArgs; i++ {
@@ -237,6 +237,7 @@ func (fs *FlagSet) parse() error {
 				}
 				argsIndex += fs.optFlags[flName].nArgs + 1
 			}
+			visited[curArg] = true
 			curState = stateInit
 		case stateNoArgsLeft:
 			for _, pos := range fs.posFlags {
