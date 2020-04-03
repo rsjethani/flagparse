@@ -126,7 +126,7 @@ func (fs *FlagSet) defaultUsage() {
 	fmt.Fprint(out, "\nPositional Arguments:")
 	for _, p := range fs.posFlags {
 		val := p.value.Get()
-		fmt.Fprintf(out, "\n  %[1]s  %[2]T\n\t%[3]s  (Default: %[2]v)", p.name, val, p.help, val)
+		fmt.Fprintf(out, "\n  %s  %T\n\t%s", p.name, val, p.help)
 	}
 
 	// TODO: show list of opt args in sorted order
