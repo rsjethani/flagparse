@@ -1,9 +1,11 @@
-package flagparse
+package flagparse_test
 
 import (
 	"fmt"
 	"math"
 	"testing"
+
+	flagp "github.com/rsjethani/flagparse"
 )
 
 const (
@@ -49,7 +51,7 @@ func TestSupportedTypeValueCreation(t *testing.T) {
 		// new([]time.Duration),
 	}
 	for _, val := range supported {
-		_, err := NewValue(val)
+		_, err := flagp.NewValue(val)
 		if err != nil {
 			t.Errorf("Expected: NewValue(%T) should succeed, Got: %s", val, err)
 		}
@@ -59,7 +61,7 @@ func TestSupportedTypeValueCreation(t *testing.T) {
 func TestUnsupportedTypeValueCreation(t *testing.T) {
 	type unsupported struct{}
 	var x unsupported
-	val, err := NewValue(&x)
+	val, err := flagp.NewValue(&x)
 	if err == nil {
 		t.Errorf("Expected: unsupported type error , Got: value of %T type", val)
 	}
@@ -67,7 +69,7 @@ func TestUnsupportedTypeValueCreation(t *testing.T) {
 
 func TestStringType(t *testing.T) {
 	var testVar string
-	arg := NewString(&testVar)
+	arg := flagp.NewString(&testVar)
 
 	data := []struct {
 		input    string
@@ -93,7 +95,7 @@ func TestStringType(t *testing.T) {
 
 func TestBoolType(t *testing.T) {
 	var testVar bool
-	arg := NewBool(&testVar)
+	arg := flagp.NewBool(&testVar)
 
 	// Test Set() with no arguments
 	arg.Set()
@@ -125,7 +127,7 @@ func TestBoolType(t *testing.T) {
 
 func TestStringListType(t *testing.T) {
 	var testVar []string
-	arg := NewStringList(&testVar)
+	arg := flagp.NewStringList(&testVar)
 	data := struct {
 		input    []string
 		expected []string
@@ -153,7 +155,7 @@ func TestStringListType(t *testing.T) {
 
 func TestBoolListType(t *testing.T) {
 	var testVar []bool
-	arg := NewBoolList(&testVar)
+	arg := flagp.NewBoolList(&testVar)
 	data := struct {
 		input    []string
 		expected []bool
@@ -188,9 +190,10 @@ func TestBoolListType(t *testing.T) {
 
 func TestIntType(t *testing.T) {
 	var testVar int
-	arg := NewInt(&testVar)
+	intVal := flagp.NewInt(&testVar)
 
-	data := []struct {
+	// Test valid values
+	validValues := []struct {
 		input    string
 		expected int
 	}{
@@ -200,31 +203,33 @@ func TestIntType(t *testing.T) {
 		{fmt.Sprint(maxInt), maxInt},
 		{fmt.Sprint(minInt), minInt},
 	}
-
-	// Test valid values
-	for _, val := range data {
-		if err := arg.Set(val.input); err != nil {
-			t.Errorf("Expected: no error, Got: error '%s' for input \"%s\"", err, val.input)
+	for _, val := range validValues {
+		if err := intVal.Set(val.input); err != nil {
+			t.Errorf("Expected: no error for Int.Set(%q); Got: error %q", val.input, err)
 		}
-		if val.expected != testVar {
-			t.Errorf("Expected: %v, Got: %v", val.expected, testVar)
+		if testVar != val.expected {
+			t.Errorf("Expected: Int's underlying variable should have the value %d; Got: %d", val.expected, testVar)
 		}
-		if val.input != arg.String() {
-			t.Errorf("Expected: %v, Got: %v", val.input, arg.String())
+		if intVal.Get() != val.expected {
+			t.Errorf("Expected: Int.Get() should return the value %d; Got: %d", val.expected, intVal.Get())
+		}
+		if intVal.String() != val.input {
+			t.Errorf("Expected: Int.String() should return the string %q, Got: %q", val.input, intVal.String())
 		}
 	}
 
 	// Test invalid values
-	for _, input := range []string{"hello", "1.1", "true", "666666666666666666666666"} {
-		if err := arg.Set(input); err == nil {
-			t.Errorf("Expected: error, Got: no error for input \"%s\"", input)
+	invalidValues := []string{"hello", "1.1", "true", "666666666666666666666666"}
+	for _, input := range invalidValues {
+		if err := intVal.Set(input); err == nil {
+			t.Errorf("Expected: Int.Set(%q) should result in error, Got: no error", input)
 		}
 	}
 }
 
 func TestIntListType(t *testing.T) {
 	var testVar []int
-	arg := NewIntList(&testVar)
+	arg := flagp.NewIntList(&testVar)
 	data := struct {
 		input    []string
 		expected []int
@@ -258,7 +263,7 @@ func TestIntListType(t *testing.T) {
 
 func TestFloat64Type(t *testing.T) {
 	var testVar float64
-	arg := NewFloat64(&testVar)
+	arg := flagp.NewFloat64(&testVar)
 
 	data := []struct {
 		input    string
@@ -295,7 +300,7 @@ func TestFloat64Type(t *testing.T) {
 
 func TestFloat64ListType(t *testing.T) {
 	var testVar []float64
-	arg := NewFloat64List(&testVar)
+	arg := flagp.NewFloat64List(&testVar)
 	data := struct {
 		input    []string
 		expected []float64
