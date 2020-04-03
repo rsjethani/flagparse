@@ -29,7 +29,7 @@ func (c *customValue) Get() interface{} {
 	return nil
 }
 
-func TestSupportedTypeValueCreation(t *testing.T) {
+func TestNewValue_SupportedType(t *testing.T) {
 	// Test value creation for types implementing Value interface
 	supported := []interface{}{
 		new(customValue),
@@ -58,12 +58,12 @@ func TestSupportedTypeValueCreation(t *testing.T) {
 	}
 }
 
-func TestUnsupportedTypeValueCreation(t *testing.T) {
+func TestNewValue_UnsupportedType(t *testing.T) {
 	type unsupported struct{}
-	var x unsupported
-	val, err := flagp.NewValue(&x)
+	var testVar unsupported
+	_, err := flagp.NewValue(&testVar)
 	if err == nil {
-		t.Errorf("Expected: unsupported type error , Got: value of %T type", val)
+		t.Errorf("Expected: NewValue(%T) should reult in error, Got: no error", testVar)
 	}
 }
 
