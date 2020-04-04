@@ -127,13 +127,12 @@ func (fs *FlagSet) defaultUsage() {
 	// TODO: show list of opt args in sorted order
 	fmt.Fprint(out, "\n\nOptional Arguments:")
 	fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptFlagPrefix, "help", "Show this help message and exit")
-	for name, arg := range fs.optFlags {
+	for _, arg := range fs.optFlags {
 		if arg.isSwitch() {
-			fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptFlagPrefix, name, arg.help)
+			fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptFlagPrefix, arg.name, arg.help)
 			continue
 		}
-		val := arg.value.Get()
-		fmt.Fprintf(out, "\n  %s%s  %[3]T\n\t%s  (Default: %[3]v)", fs.OptFlagPrefix, name, val, arg.help)
+		fmt.Fprintf(out, "\n  %s%s  %T\n\t%s  (Default: %s)", fs.OptFlagPrefix, arg.name, arg.value.Get(), arg.help, arg.def)
 	}
 
 	fmt.Fprint(out, "\n")
