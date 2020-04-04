@@ -132,7 +132,7 @@ func (fs *FlagSet) defaultUsage() {
 			fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptFlagPrefix, arg.name, arg.help)
 			continue
 		}
-		fmt.Fprintf(out, "\n  %s%s  %T\n\t%s  (Default: %s)", fs.OptFlagPrefix, arg.name, arg.value.Get(), arg.help, arg.def)
+		fmt.Fprintf(out, "\n  %s%s  %T\n\t%s  (Default: %s)", fs.OptFlagPrefix, arg.name, arg.value.Get(), arg.help, arg.defVal)
 	}
 
 	fmt.Fprint(out, "\n")

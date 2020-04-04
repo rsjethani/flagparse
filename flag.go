@@ -6,7 +6,7 @@ import (
 
 type Flag struct {
 	// TODO: convert to string for patterns like '*', '+' etc.
-	def        string
+	defVal     string
 	nArgs      int
 	positional bool
 	value      Value
@@ -15,40 +15,26 @@ type Flag struct {
 }
 
 func NewPosFlag(name string, value Value, help string) *Flag {
-	if value == nil {
-		return nil
-	}
-	return &Flag{
-		name:       name,
-		nArgs:      1,
-		value:      value,
-		help:       help,
-		positional: true,
-		def:        value.String(),
-	}
+	fl := NewSwitchFlag(name, value, help)
+	fl.nArgs = 1
+	fl.positional = true
+	fl.defVal = value.String()
+	return fl
 }
 
 func NewOptFlag(name string, value Value, help string) *Flag {
-	if value == nil {
-		return nil
-	}
-	return &Flag{
-		name:       name,
-		nArgs:      1,
-		value:      value,
-		help:       help,
-		positional: false,
-		def:        value.String(),
-	}
+	fl := NewSwitchFlag(name, value, help)
+	fl.nArgs = 1
+	fl.defVal = value.String()
+	return fl
 }
 
 func NewSwitchFlag(name string, value Value, help string) *Flag {
-	fl := NewOptFlag(name, value, help)
-	if fl == nil {
-		return nil
+	return &Flag{
+		name:  name,
+		value: value,
+		help:  help,
 	}
-	fl.nArgs = 0
-	return fl
 }
 
 func (fl *Flag) isSwitch() bool {
