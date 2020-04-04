@@ -82,23 +82,24 @@ func TestParseTagsValidKeyValues(t *testing.T) {
 }
 
 func TestNewArgFromTagsInvalidInput(t *testing.T) {
+	testValue := NewInt(new(int))
 	testKVs := "nargs=123abc"
-	if arg, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
+	if arg, err := newFlagFromTags(testValue, "", testKVs); arg != nil || err == nil {
 		t.Errorf("testing: newArgFromTags(%#v); expected: non-nil error since key-value parsing should fail for invalid key/value; got: %#v, %#v ", testKVs, arg, err)
 	}
 
 	testKVs = "type=pos,nargs=0"
-	if arg, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
+	if arg, err := newFlagFromTags(testValue, "", testKVs); arg != nil || err == nil {
 		t.Errorf("testing: newArgFromTags(%#v); expected: non-nil error since nargs cannot be 0 for type=pos; got: %#v, %#v ", testKVs, arg, err)
 	}
 
 	testKVs = "type=switch,nargs=10"
-	if arg, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
+	if arg, err := newFlagFromTags(testValue, "", testKVs); arg != nil || err == nil {
 		t.Errorf("testing: newArgFromTags(%#v); expected: non-nil error since nargs can only be 0 for type=switch; got: %#v, %#v ", testKVs, arg, err)
 	}
 
 	testKVs = "nargs=9999999999999999999999999"
-	if arg, err := newFlagFromTags(nil, "", testKVs); arg != nil || err == nil {
+	if arg, err := newFlagFromTags(testValue, "", testKVs); arg != nil || err == nil {
 		t.Errorf("testing: newArgFromTags(%#v); expected: non-nil error since nargs value overflows int size; got: %#v, %#v ", testKVs, arg, err)
 	}
 }

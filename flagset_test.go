@@ -19,6 +19,7 @@ func TestNewFlagSet(t *testing.T) {
 }
 
 func TestAddFlagToFlagSet(t *testing.T) {
+	testValue := NewInt(new(int))
 	fs := NewFlagSet()
 	fs.Add(nil)
 	if len(fs.posFlags) != 0 || fs.optFlags["--dummy"] != nil {
@@ -26,13 +27,13 @@ func TestAddFlagToFlagSet(t *testing.T) {
 	}
 
 	fs = NewFlagSet()
-	fs.Add(NewPosFlag("", nil, ""))
+	fs.Add(NewPosFlag("", testValue, ""))
 	if len(fs.posFlags) == 0 {
 		t.Errorf(`testing: argset.AddArgument("pos1", NewPosArg(nil, "")); expected: argset.posArgs[0].name == "pos1"; got: len(argset.posArgs) == 0`)
 	}
 
 	fs = NewFlagSet()
-	fs.Add(NewOptFlag("", nil, ""))
+	fs.Add(NewOptFlag("", testValue, ""))
 	if len(fs.optFlags) == 0 {
 		t.Errorf(`testing: argset.AddArgument("opt1", NewOptArg(nil, "")); expected: argset.optArgs["opt1"] != nil; got: argset.optArgs["opt1"] == nil`)
 	}
@@ -54,7 +55,7 @@ func TestNewArgSetFromInvalidInputs(t *testing.T) {
 		&struct {
 			Field1 int8 `flagparse:""`
 		}{},
-		// Test invalid tag/value as input
+		// Test invalid key/value as input
 		&struct {
 			Field1 int `flagparse:"type=xxx"`
 		}{},

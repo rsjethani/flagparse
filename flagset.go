@@ -35,11 +35,6 @@ func (fs *FlagSet) SetOutput(w io.Writer) {
 	}
 }
 
-// func (fs *FlagSet) addHelp() {
-// 	var help bool
-// 	fs.Add(NewSwitchFlag("help", NewBool(&help), "Show this help message and exit"))
-// }
-
 func NewFlagSet() *FlagSet {
 	fs := &FlagSet{
 		OptFlagPrefix: defaultOptFlagPrefix,
@@ -48,7 +43,6 @@ func NewFlagSet() *FlagSet {
 		name:          os.Args[0],
 		CmdArgs:       os.Args[1:],
 	}
-	// fs.addHelp()
 	return fs
 }
 

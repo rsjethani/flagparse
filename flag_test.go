@@ -1,44 +1,78 @@
 package flagparse
 
 import (
+	"reflect"
 	"testing"
 )
 
-func TestNewPosFlag(t *testing.T) {
-	fl := NewPosFlag("", nil, "help string")
-	if !fl.positional || fl.value != nil || fl.nArgs != 1 || fl.help != "help string" {
-		t.Errorf("Expected: positional=true, value=nil, nargs=1, help=help string; Got: %+v", fl)
+func TestSwitchFlag(t *testing.T) {
+	var testVar int = 100
+	val := NewInt(&testVar)
+	expected := &Flag{
+		name:  "flag-name",
+		value: val,
+		help:  "help message",
+	}
+	got := NewSwitchFlag(expected.name, expected.value, expected.help)
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("Testing: NewSwitchFlag(); Expected: %#v; Got: %#v", expected, got)
+	}
+	if !got.isSwitch() {
+		t.Errorf("Testing: Flag.isSwitch(); Expected: true; Got: false")
+	}
+	err := got.SetNArgs(5)
+	if err != nil || got.nArgs != 5 || got.isSwitch() {
+		t.Errorf("Testing: Flag.SetNargs(5); Expected: no error, Flag.nArgs==5, Flag.isSwitch()==false; Got: %v error, Flag.nArgs==%v, Flag.isSwitch()==%v", err, got.nArgs, got.isSwitch())
 	}
 }
 
-func TestNewOptFlag(t *testing.T) {
-	fl := NewOptFlag("", nil, "help string")
-	if fl.positional || fl.value != nil || fl.nArgs != 1 || fl.help != "help string" {
-		t.Errorf("Expected: positional=false, value=nil, nargs=1, help=help string; Got: %+v", fl)
+func TestOptFlag(t *testing.T) {
+	var testVar int = 100
+	val := NewInt(&testVar)
+	expected := &Flag{
+		name:   "flag-name",
+		value:  val,
+		help:   "help message",
+		nArgs:  1,
+		defVal: val.String(),
+	}
+	got := NewOptFlag(expected.name, expected.value, expected.help)
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("Testing: NewOptFlag(); Expected: %#v; Got: %#v", expected, got)
+	}
+	if got.isSwitch() {
+		t.Errorf("Testing: Flag.isSwitch(); Expected: false; Got: true")
+	}
+	err := got.SetNArgs(0)
+	if err != nil || got.nArgs != 0 || !got.isSwitch() {
+		t.Errorf("Testing: Flag.SetNargs(0); Expected: no error, Flag.nArgs==0, Flag.isSwitch()==true; Got: %v error, Flag.nArgs==%v, Flag.isSwitch()==%v", err, got.nArgs, got.isSwitch())
 	}
 }
 
-func TestNewSwitchFlag(t *testing.T) {
-	fl := NewSwitchFlag("", nil, "help string")
-	if fl.positional || fl.value != nil || fl.nArgs != 0 || fl.help != "help string" {
-		t.Errorf("Expected: positional=false, value=nil, nargs=0, help=help string; Got: %+v", fl)
+func TestPosFlag(t *testing.T) {
+	var testVar int = 100
+	val := NewInt(&testVar)
+	expected := &Flag{
+		name:       "flag-name",
+		value:      val,
+		help:       "help message",
+		nArgs:      1,
+		positional: true,
+		defVal:     val.String(),
 	}
-}
-
-func TestSetNArgs(t *testing.T) {
-	fl := NewPosFlag("", nil, "")
-	if err := fl.SetNArgs(10); err != nil || fl.nArgs != 10 {
-		t.Errorf("Expected: for positional flag %[1]T.SetNArgs(10) suceeds with nil error setting %[1]T.nArgs==10; Got: error", fl)
+	got := NewPosFlag(expected.name, expected.value, expected.help)
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("Testing: NewPosFlag(); Expected: %#v; Got: %#v", expected, got)
 	}
-	if err := fl.SetNArgs(0); err == nil {
-		t.Errorf("Expected: for positional flag %T.SetNArgs(0) results in error; Got: nil error", fl)
+	if got.isSwitch() {
+		t.Errorf("Testing: Flag.isSwitch(); Expected: false; Got: true")
 	}
-
-	fl = NewOptFlag("", nil, "")
-	if err := fl.SetNArgs(10); err != nil || fl.nArgs != 10 {
-		t.Errorf("Expected: for optional flag %[1]T.SetNArgs(10) suceeds with nil error setting %[1]T.nArgs==10; Got: error", fl)
+	err := got.SetNArgs(0)
+	if err == nil {
+		t.Errorf("Testing: Flag.SetNargs(0); Expected: error; Got: nil")
 	}
-	if err := fl.SetNArgs(0); err != nil || fl.nArgs != 0 {
-		t.Errorf("Expected: for optional flag %[1]T.SetNArgs(0) suceeds with no error setting %[1]T.nArgs==0; Got: error", fl)
+	err = got.SetNArgs(5)
+	if err != nil || got.nArgs != 5 || !got.positional {
+		t.Errorf("Testing: Flag.SetNargs(5); Expected: no error, Flag.nArgs==5, Flag.positional==true; Got: %v error, Flag.nArgs==%v, Flag.positional==%v", err, got.nArgs, got.positional)
 	}
 }
