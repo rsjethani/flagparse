@@ -1,11 +1,9 @@
-package flagparse_test
+package flagparse
 
 import (
 	"fmt"
 	"math"
 	"testing"
-
-	flagp "github.com/rsjethani/flagparse"
 )
 
 const (
@@ -51,7 +49,7 @@ func TestNewValue_SupportedType(t *testing.T) {
 		// new([]time.Duration),
 	}
 	for _, val := range supported {
-		_, err := flagp.NewValue(val)
+		_, err := NewValue(val)
 		if err != nil {
 			t.Errorf("Expected: NewValue(%T) should succeed, Got: %s", val, err)
 		}
@@ -61,7 +59,7 @@ func TestNewValue_SupportedType(t *testing.T) {
 func TestNewValue_UnsupportedType(t *testing.T) {
 	type unsupported struct{}
 	var testVar unsupported
-	_, err := flagp.NewValue(&testVar)
+	_, err := NewValue(&testVar)
 	if err == nil {
 		t.Errorf("Expected: NewValue(%T) should reult in error, Got: no error", testVar)
 	}
@@ -69,7 +67,7 @@ func TestNewValue_UnsupportedType(t *testing.T) {
 
 func TestStringType(t *testing.T) {
 	var testVar string
-	arg := flagp.NewString(&testVar)
+	arg := NewString(&testVar)
 
 	data := []struct {
 		input    string
@@ -95,7 +93,7 @@ func TestStringType(t *testing.T) {
 
 func TestBoolType(t *testing.T) {
 	var testVar bool
-	arg := flagp.NewBool(&testVar)
+	arg := NewBool(&testVar)
 
 	// Test Set() with no arguments
 	arg.Set()
@@ -127,7 +125,7 @@ func TestBoolType(t *testing.T) {
 
 func TestStringListType(t *testing.T) {
 	var testVar []string
-	arg := flagp.NewStringList(&testVar)
+	arg := NewStringList(&testVar)
 	data := struct {
 		input    []string
 		expected []string
@@ -155,7 +153,7 @@ func TestStringListType(t *testing.T) {
 
 func TestBoolListType(t *testing.T) {
 	var testVar []bool
-	arg := flagp.NewBoolList(&testVar)
+	arg := NewBoolList(&testVar)
 	data := struct {
 		input    []string
 		expected []bool
@@ -190,7 +188,7 @@ func TestBoolListType(t *testing.T) {
 
 func TestIntType(t *testing.T) {
 	var testVar int
-	intVal := flagp.NewInt(&testVar)
+	intVal := NewInt(&testVar)
 
 	// Test valid values
 	validValues := []struct {
@@ -229,7 +227,7 @@ func TestIntType(t *testing.T) {
 
 func TestIntListType(t *testing.T) {
 	var testVar []int
-	arg := flagp.NewIntList(&testVar)
+	arg := NewIntList(&testVar)
 	data := struct {
 		input    []string
 		expected []int
@@ -263,7 +261,7 @@ func TestIntListType(t *testing.T) {
 
 func TestFloat64Type(t *testing.T) {
 	var testVar float64
-	arg := flagp.NewFloat64(&testVar)
+	arg := NewFloat64(&testVar)
 
 	data := []struct {
 		input    string
@@ -300,7 +298,7 @@ func TestFloat64Type(t *testing.T) {
 
 func TestFloat64ListType(t *testing.T) {
 	var testVar []float64
-	arg := flagp.NewFloat64List(&testVar)
+	arg := NewFloat64List(&testVar)
 	data := struct {
 		input    []string
 		expected []float64
