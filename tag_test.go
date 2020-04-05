@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestSplitKV(t *testing.T) {
+func Test_splitKV(t *testing.T) {
 	data := make(map[string][]string)
 	data[""] = []string{}
 	data[fmt.Sprintf("%[1]c%[1]c%[1]c", tagSep)] = []string{}
@@ -20,7 +20,7 @@ func TestSplitKV(t *testing.T) {
 	}
 }
 
-func TestParseTagsInvalidKeyValues(t *testing.T) {
+func Test_parseTags_InvalidKeyValues(t *testing.T) {
 	invalidKVs := []string{
 		"hello",
 		"help=",
@@ -37,7 +37,7 @@ func TestParseTagsInvalidKeyValues(t *testing.T) {
 	}
 }
 
-func TestParseTagsValidKeyValues(t *testing.T) {
+func Test_parseTags_ValidKeyValues(t *testing.T) {
 	data := []struct {
 		validKVs string
 		expected map[string]string
@@ -81,7 +81,7 @@ func TestParseTagsValidKeyValues(t *testing.T) {
 	}
 }
 
-func TestNewArgFromTagsInvalidInput(t *testing.T) {
+func Test_newArgFromTags_InvalidInput(t *testing.T) {
 	testValue := NewInt(new(int))
 	testKVs := "nargs=123abc"
 	if arg, err := newFlagFromTags(testValue, "", testKVs); arg != nil || err == nil {
@@ -104,7 +104,7 @@ func TestNewArgFromTagsInvalidInput(t *testing.T) {
 	}
 }
 
-func TestNewArgFromTagsValidInput(t *testing.T) {
+func Test_newArgFromTags_ValidInput(t *testing.T) {
 	testValue := NewInt(new(int))
 
 	testKVs := "help=help message"
