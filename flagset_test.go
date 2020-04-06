@@ -82,8 +82,8 @@ func TestNewArgSetFromValidInputs(t *testing.T) {
 
 	// Test parsing of tagged fields and no error with valid key/values
 	args2 := struct {
-		Field1 int `flagparse:""`         // optional argument
-		Field2 int `flagparse:"type=pos"` // positional argument
+		Field1 int `flagparse:""`           // optional argument
+		Field2 int `flagparse:"positional"` // positional argument
 	}{}
 	argset, err = NewFlagSetFrom(&args2)
 	if err != nil {
@@ -96,17 +96,17 @@ func TestNewArgSetFromValidInputs(t *testing.T) {
 
 func TestUsage(t *testing.T) {
 	args1 := struct {
-		Pos1 int     `flagparse:"type=pos,help=pos1 help"`
-		Pos2 bool    `flagparse:"type=pos,help=pos2 help"`
-		Pos3 string  `flagparse:"type=pos,help=pos3 help"`
-		Pos4 float64 `flagparse:"type=pos,help=pos4 help"`
-		Pos5 []int   `flagparse:"type=pos,help=pos5 help,nargs=2"`
+		Pos1 int     `flagparse:"positional,help=pos1 help"`
+		Pos2 bool    `flagparse:"positional,help=pos2 help"`
+		Pos3 string  `flagparse:"positional,help=pos3 help"`
+		Pos4 float64 `flagparse:"positional,help=pos4 help"`
+		Pos5 []int   `flagparse:"positional,help=pos5 help,nargs=2"`
 		Opt1 int     `flagparse:"help=opt1 help"`
 		Opt2 bool    `flagparse:"help=opt2 help"`
 		Opt3 string  `flagparse:"help=opt3 help"`
 		Opt4 float64 `flagparse:"help=opt4 help"`
 		Opt5 []int   `flagparse:"help=opt5 help,nargs=3"`
-		Sw1  bool    `flagparse:"type=switch,help=sw1 help"`
+		Sw1  bool    `flagparse:"help=sw1 help,nargs=0"`
 	}{}
 
 	fs, err := NewFlagSetFrom(&args1)

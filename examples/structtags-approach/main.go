@@ -9,10 +9,10 @@ import (
 func main() {
 	config := struct {
 		Salute   string  `flagparse:"help=Salutation for the employee"`
-		Salary   float64 `flagparse:"help=Employee salary,type=pos"`
-		FullName string  `flagparse:"help=Full name of the employee,type=pos"`
+		Salary   float64 `flagparse:"positional,help=Employee salary"`
+		FullName string  `flagparse:"positional,help=Full name of the employee"`
 		EmpID    []int   `flagparse:"name=emp-id,help=Employee ID for new employee,nargs=3"`
-		IsIntern bool    `flagparse:"name=is-intern,help=Is the new employee an intern,type=switch"`
+		IsIntern bool    `flagparse:"name=is-intern,help=Is the new employee an intern,nargs=0"`
 	}{
 		EmpID:  []int{100},
 		Salute: "Mr.",

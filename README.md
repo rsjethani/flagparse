@@ -15,9 +15,9 @@ type <struct name> struct {
 
 | Key | Mandatory | Value Type (Go) | Possible Values | Default | Description |
 | :---: | :---: | --- | :---: | :---: | :--- |
-| `type` | no | string | `pos`/`opt`/`switch` | `opt` | create a positional argument if given otherwise create an optional argument |
+| `positional` | no | `N/A` | `N/A` | `N/A` | create a positional argument if given otherwise create an optional argument |
 | `name` | no | string | a valid string containing alphanumeric charaters and/or '-' | struct field's name in lower case | the name to identify the argument with |
-| `nargs` | no | int | a valid int | `1` if `type=pos\|opt`, `0` if `type=switch` | number of values required by the argument |
+| `nargs` | no | int | a valid int, give `0` if you want a switch flag | `1` | number of values required by the argument |
 | `help` | no | string | any valid string, escape `,` as `\\,`  | "" | help message for the user |
 
 ## Example
