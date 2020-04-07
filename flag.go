@@ -37,14 +37,6 @@ func NewSwitchFlag(name string, value Value, help string) *Flag {
 	}
 }
 
-func (fl *Flag) isPositional() bool {
-	return fl.positional
-}
-
-func (fl *Flag) isOptional() bool {
-	return !fl.positional && fl.nArgs != 0
-}
-
 func (fl *Flag) isSwitch() bool {
 	return !fl.positional && fl.nArgs == 0
 }
@@ -59,10 +51,10 @@ func (fl *Flag) switchToOpt() {
 
 func (fl *Flag) SetNArgs(n int) error {
 	if n == 0 {
-		if fl.isPositional() {
+		if fl.positional {
 			return fmt.Errorf("nargs cannot be 0 for positional flag")
 		}
-		if fl.isOptional() {
+		if fl.nArgs != 0 { // means this is an optional flag which needs to be converted to a switch
 			fl.optToSwitch()
 		}
 	} else if fl.isSwitch() {
