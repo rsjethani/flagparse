@@ -5,74 +5,57 @@ import (
 	"testing"
 )
 
-func TestSwitchFlag(t *testing.T) {
+func Test_NewSwitchFlag(t *testing.T) {
 	var testVar int = 100
 	val := NewInt(&testVar)
 	expected := &Flag{
-		name:  "flag-name",
-		value: val,
-		help:  "help message",
+		nArgs:      0,
+		defVal:     "",
+		value:      val,
+		positional: false,
+		name:       "flag-name",
+		help:       "help message",
 	}
 	got := NewSwitchFlag(expected.name, expected.value, expected.help)
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("Testing: NewSwitchFlag(); Expected: %#v; Got: %#v", expected, got)
-	}
-	if !got.isSwitch() {
-		t.Errorf("Testing: Flag.isSwitch(); Expected: true; Got: false")
-	}
-	err := got.SetNArgs(5)
-	if err != nil || got.nArgs != 5 || got.isSwitch() {
-		t.Errorf("Testing: Flag.SetNargs(5); Expected: no error, Flag.nArgs==5, Flag.isSwitch()==false; Got: %v error, Flag.nArgs==%v, Flag.isSwitch()==%v", err, got.nArgs, got.isSwitch())
+		t.Errorf("Testing: NewSwitchFlag(%q, %#v, %q); Expected: %#v; Got: %#v", expected.name, expected.value, expected.help, expected, got)
 	}
 }
 
-func TestOptFlag(t *testing.T) {
+func Test_NewOptFlag(t *testing.T) {
 	var testVar int = 100
 	val := NewInt(&testVar)
 	expected := &Flag{
-		name:   "flag-name",
-		value:  val,
-		help:   "help message",
-		nArgs:  1,
-		defVal: val.String(),
+		nArgs:      1,
+		defVal:     val.String(),
+		value:      val,
+		positional: false,
+		name:       "flag-name",
+		help:       "help message",
 	}
 	got := NewOptFlag(expected.name, expected.value, expected.help)
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("Testing: NewOptFlag(); Expected: %#v; Got: %#v", expected, got)
-	}
-	if got.isSwitch() {
-		t.Errorf("Testing: Flag.isSwitch(); Expected: false; Got: true")
-	}
-	err := got.SetNArgs(0)
-	if err != nil || got.nArgs != 0 || !got.isSwitch() {
-		t.Errorf("Testing: Flag.SetNargs(0); Expected: no error, Flag.nArgs==0, Flag.isSwitch()==true; Got: %v error, Flag.nArgs==%v, Flag.isSwitch()==%v", err, got.nArgs, got.isSwitch())
+		t.Errorf("Testing: NewOptFlag(%q, %#v, %q); Expected: %#v; Got: %#v", expected.name, expected.value, expected.help, expected, got)
 	}
 }
 
-func TestPosFlag(t *testing.T) {
+func Test_NewPosFlag(t *testing.T) {
 	var testVar int = 100
 	val := NewInt(&testVar)
 	expected := &Flag{
-		name:       "flag-name",
-		value:      val,
-		help:       "help message",
 		nArgs:      1,
-		positional: true,
 		defVal:     val.String(),
+		value:      val,
+		positional: true,
+		name:       "flag-name",
+		help:       "help message",
 	}
 	got := NewPosFlag(expected.name, expected.value, expected.help)
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("Testing: NewPosFlag(); Expected: %#v; Got: %#v", expected, got)
+		t.Errorf("Testing: NewPosFlag(%q, %#v, %q); Expected: %#v; Got: %#v", expected.name, expected.value, expected.help, expected, got)
 	}
-	if got.isSwitch() {
-		t.Errorf("Testing: Flag.isSwitch(); Expected: false; Got: true")
-	}
-	err := got.SetNArgs(0)
-	if err == nil {
-		t.Errorf("Testing: Flag.SetNargs(0); Expected: error; Got: nil")
-	}
-	err = got.SetNArgs(5)
-	if err != nil || got.nArgs != 5 || !got.positional {
-		t.Errorf("Testing: Flag.SetNargs(5); Expected: no error, Flag.nArgs==5, Flag.positional==true; Got: %v error, Flag.nArgs==%v, Flag.positional==%v", err, got.nArgs, got.positional)
-	}
+}
+
+func Test_SetNArgs(t *testing.T) {
+
 }
