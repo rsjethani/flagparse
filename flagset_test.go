@@ -1,45 +1,59 @@
 package flagparse
 
 import (
+	"os"
+	"reflect"
 	"testing"
 )
 
-func TestNewFlagSet(t *testing.T) {
-	argset := NewFlagSet()
-	if argset.OptFlagPrefix != defaultOptFlagPrefix {
-		t.Errorf("testing: NewFlagSet(); expected: argset.OptFlagPrefix==%#v; got: %#v", defaultOptFlagPrefix, argset.OptFlagPrefix)
+func Test_NewFlagSet(t *testing.T) {
+	flagSet := NewFlagSet()
+	expected := &FlagSet{
+		OptFlagPrefix: defaultOptFlagPrefix,
+		optFlags:      make(map[string]*Flag),
+		usageOut:      os.Stderr,
+		name:          os.Args[0],
+		CmdArgs:       os.Args[1:],
 	}
-
-	if argset.optFlags == nil {
-		t.Errorf("testing: NewFlagSet(); expected: argset.optFlags!=nil; got: nil")
-	}
-	if len(argset.posFlags) != 0 {
-		t.Errorf("testing: DefaultArgSet(); expected: len(argset.posArgs)==0; got: len(argset.posArgs)==%d", len(argset.posFlags))
+	if !reflect.DeepEqual(flagSet, expected) {
+		t.Errorf("Testing: NewFlagSet(); Expected: %#v; Got: %#v", expected, flagSet)
 	}
 }
 
-func TestAddFlagToFlagSet(t *testing.T) {
+func Test_Add_FlagToFlagSet(t *testing.T) {
 	testValue := NewInt(new(int))
+	posFlag := NewPosFlag("pos1", testValue, "help")
+	optFlag := NewOptFlag("opt1", testValue, "help")
+	swFlag := NewSwitchFlag("sw1", testValue, "help")
+
+	expected := NewFlagSet()
+
 	fs := NewFlagSet()
 	fs.Add(nil)
-	if len(fs.posFlags) != 0 || fs.optFlags["--dummy"] != nil {
-		t.Errorf(`testing: argset.Add("dummy", nil); expected: no positional/optional flag named 'dummy should get added; got: 'dummy' got added`)
+	if !reflect.DeepEqual(fs, expected) {
+		t.Errorf("Testing: FlagSet.Add(nil); Expected: %+v; Got: %+v", expected, fs)
 	}
 
-	fs = NewFlagSet()
-	fs.Add(NewPosFlag("", testValue, ""))
-	if len(fs.posFlags) == 0 {
-		t.Errorf(`testing: argset.AddArgument("pos1", NewPosArg(nil, "")); expected: argset.posArgs[0].name == "pos1"; got: len(argset.posArgs) == 0`)
+	expected.posFlags = append(expected.posFlags, posFlag)
+	fs.Add(posFlag)
+	if !reflect.DeepEqual(fs, expected) {
+		t.Errorf("Testing: FlagSet.Add(%+v); Expected: %+v; Got: %+v", posFlag, expected, fs)
 	}
 
-	fs = NewFlagSet()
-	fs.Add(NewOptFlag("", testValue, ""))
-	if len(fs.optFlags) == 0 {
-		t.Errorf(`testing: argset.AddArgument("opt1", NewOptArg(nil, "")); expected: argset.optArgs["opt1"] != nil; got: argset.optArgs["opt1"] == nil`)
+	expected.optFlags[optFlag.name] = optFlag
+	fs.Add(optFlag)
+	if !reflect.DeepEqual(fs, expected) {
+		t.Errorf("Testing: FlagSet.Add(%+v); Expected: %+v; Got: %+v", optFlag, expected, fs)
+	}
+
+	expected.optFlags[swFlag.name] = swFlag
+	fs.Add(swFlag)
+	if !reflect.DeepEqual(fs, expected) {
+		t.Errorf("Testing: FlagSet.Add(%+v); Expected: %+v; Got: %+v", swFlag, expected, fs)
 	}
 }
 
-func TestNewArgSetFromInvalidInputs(t *testing.T) {
+func Test_NewArgSetFrom_InvalidInputs(t *testing.T) {
 	data := []interface{}{
 		// Test nil as input
 		nil,
@@ -57,62 +71,69 @@ func TestNewArgSetFromInvalidInputs(t *testing.T) {
 		}{},
 		// Test invalid key/value as input
 		&struct {
-			Field1 int `flagparse:"type=xxx"`
+			Field1 int `flagparse:"name=A_B"`
 		}{},
 	}
 	for _, input := range data {
-		if argset, err := NewFlagSetFrom(input); argset != nil || err == nil {
-			t.Errorf("testing: NewArgSet(%#v); expected: (nil, error); got: (%v, %#v)", input, argset, err)
+		if flagSet, err := NewFlagSetFrom(input); flagSet != nil || err == nil {
+			t.Errorf("testing: NewFlagSet(%#v); expected: (nil, error); got: (%v, %#v)", input, flagSet, err)
 		}
 	}
 }
 
-func TestNewArgSetFromValidInputs(t *testing.T) {
-	// Test skipping of untagged fields
-	args1 := struct {
-		Field1 int // no 'flagparse' tag hence should be skipped
-	}{}
-	argset, err := NewFlagSetFrom(&args1)
+func Test_NewArgSetFrom_ValidInputs(t *testing.T) {
+	args := struct {
+		Field0 int // should get ignored
+		Field1 int `flagparse:""`           // expected an optional flag
+		Field2 int `flagparse:"positional"` // expected a positional flag
+	}{Field0: 11, Field1: 22, Field2: 33}
+
+	flagSet, err := NewFlagSetFrom(&args)
 	if err != nil {
-		t.Errorf("testing: NewArgSet(%#v); expected: non-nil *ArgSet and nil error; got: %v", args1, err)
+		t.Errorf("Testing: NewFlagSetFrom(%#v); Expected: no error; Got: %v", args, err)
 	}
-	if len(argset.posFlags) != 0 || len(argset.optFlags) != 0 {
-		t.Errorf("testing: NewArgSet(%#v); expected: no arguments except --help in argset; got: %#v", &args1, argset)
+	if len(flagSet.optFlags) != 1 {
+		t.Errorf("Testing: NewFlagSetFrom(%#v); Expected: one optional Flag in FlagSet; Got: %d", args, len(flagSet.optFlags))
 	}
 
-	// Test parsing of tagged fields and no error with valid key/values
-	args2 := struct {
-		Field1 int `flagparse:""`           // optional argument
-		Field2 int `flagparse:"positional"` // positional argument
-	}{}
-	argset, err = NewFlagSetFrom(&args2)
-	if err != nil {
-		t.Errorf("testing: NewArgSet(%#v); expected: non-nil *ArgSet and nil error; got: %v", args2, err)
-	}
-	if len(argset.posFlags) == 0 || len(argset.optFlags) == 0 {
-		t.Errorf("testing: NewArgSet(%#v); expected: 1 optional and 1 positional arguments in argset; got: %#v", &args2, argset)
+	if len(flagSet.posFlags) != 1 {
+		t.Errorf("Testing: NewFlagSetFrom(%#v); Expected: one positional Flag in FlagSet; Got: %d", args, len(flagSet.posFlags))
 	}
 }
 
-func TestUsage(t *testing.T) {
-	args1 := struct {
-		Pos1 int     `flagparse:"positional,help=pos1 help"`
-		Pos2 bool    `flagparse:"positional,help=pos2 help"`
-		Pos3 string  `flagparse:"positional,help=pos3 help"`
-		Pos4 float64 `flagparse:"positional,help=pos4 help"`
-		Pos5 []int   `flagparse:"positional,help=pos5 help,nargs=2"`
-		Opt1 int     `flagparse:"help=opt1 help"`
-		Opt2 bool    `flagparse:"help=opt2 help"`
-		Opt3 string  `flagparse:"help=opt3 help"`
-		Opt4 float64 `flagparse:"help=opt4 help"`
-		Opt5 []int   `flagparse:"help=opt5 help,nargs=3"`
-		Sw1  bool    `flagparse:"help=sw1 help,nargs=0"`
-	}{}
+// func Test_usage_defaultUsage(t *testing.T) {
+// 	args1 := struct {
+// 		Pos1 int     `flagparse:"positional,help=pos1 help"`
+// 		Pos2 bool    `flagparse:"positional,help=pos2 help"`
+// 		Pos3 string  `flagparse:"positional,help=pos3 help"`
+// 		Pos4 float64 `flagparse:"positional,help=pos4 help"`
+// 		Pos5 []int   `flagparse:"positional,help=pos5 help,nargs=2"`
+// 		Opt1 int     `flagparse:"help=opt1 help"`
+// 		Opt2 bool    `flagparse:"help=opt2 help"`
+// 		Opt3 string  `flagparse:"help=opt3 help"`
+// 		Opt4 float64 `flagparse:"help=opt4 help"`
+// 		Opt5 []int   `flagparse:"help=opt5 help,nargs=3"`
+// 		Sw1  bool    `flagparse:"help=sw1 help,nargs=0"`
+// 	}{}
 
-	fs, err := NewFlagSetFrom(&args1)
-	if err != nil {
-		t.Error(err)
+// 	fs, err := NewFlagSetFrom(&args1)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	buf := &bytes.Buffer{}
+// 	fs.SetOutput(buf)
+// 	fs.Desc = "Description about cmdline usage"
+// 	fs.usage()
+// }
+
+func Test_usage_UserDefined(t *testing.T) {
+	fs := NewFlagSet()
+	var called bool
+	fs.Usage = func() {
+		called = true
 	}
-	fs.Desc = "Description about cmdline usage"
 	fs.usage()
+	if !called {
+		t.Errorf("Testing: Flagset.usage(); Expected: user defined function should be called; Got: not called")
+	}
 }
