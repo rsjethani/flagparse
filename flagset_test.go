@@ -138,18 +138,18 @@ func Test_usage_UserDefined(t *testing.T) {
 	}
 }
 
-type testArgs struct {
+type testConfig struct {
 	Pos1 int `flagparse:"positional,help=pos1 help"`
 	// Pos2 []float64 `flagparse:"positional,help=pos2 help,nargs=2"`
 	Opt1 int       `flagparse:"help=opt1 help"`
-	Opt2 []string  `flagparse:"help=opt2 help,nargs=3"`
+	Opt2 []string  `flagparse:"help=opt2 help,nargs=2"`
 	Opt3 []float64 `flagparse:"help=opt3 help,nargs=-1"`
 	Sw1  bool      `flagparse:"help=sw1 help,nargs=0"`
 }
 
-func Test_parse_InvalidInputs(t *testing.T) {
-	args := &testArgs{}
-	fs, err := NewFlagSetFrom(args)
+func Test_Parse_InvalidInputs(t *testing.T) {
+	cfg := &testConfig{}
+	fs, err := NewFlagSetFrom(cfg)
 	if err != nil {
 		t.Errorf("Unexpected error: %q", err)
 	}
@@ -161,12 +161,58 @@ func Test_parse_InvalidInputs(t *testing.T) {
 		{"10", "--opt1", "hello"},
 		{"10", "--opt1", "55", "--opt1", "60"},
 		{"10", "--opt2", "one"},
+		{"10", "--opt3"},
+		{"10", "--opt3", "--opt1", "55"},
 		{"10", "--opt3", "45.6", "99.99", "not a float64"},
 	}
 	for _, input := range data {
 		fs.CmdArgs = input
-		if err := fs.parse(); err == nil {
-			t.Errorf("Testing: FlagSet.parse(); Expected error with %+v as args;Got: no error", input)
+		fs.ContinueOnError = true
+		if err := fs.Parse(); err == nil {
+			t.Errorf("Testing: FlagSet.Parse(); Expected: error with %q as args; Got: no error", input)
+		}
+	}
+}
+
+func Test_Parse_ValidInputs(t *testing.T) {
+	cfg := &testConfig{
+		Pos1: -99,
+		Opt1: -999,
+		Opt2: []string{"hello", "world"},
+		Opt3: []float64{5.5},
+		Sw1:  false,
+	}
+	fs, err := NewFlagSetFrom(cfg)
+	if err != nil {
+		t.Errorf("Unexpected error: %q", err)
+	}
+	data := []struct {
+		args     []string
+		expected *testConfig
+	}{
+		{
+			args: []string{"10"},
+			expected: &testConfig{
+				Pos1: 10,
+				Opt1: -999,
+				Opt2: []string{"hello", "world"},
+				Opt3: []float64{5.5},
+				Sw1:  false,
+			},
+		},
+		{
+			args:     []string{"20", "--sw1", "--opt1", "100", "--opt2", "one", "two", "--opt3", "1.1", "2.2", "3.3"},
+			expected: &testConfig{Pos1: 20, Opt1: 100, Opt2: []string{"one", "two"}, Opt3: []float64{1.1, 2.2, 3.3}, Sw1: true},
+		},
+	}
+	for _, input := range data {
+		fs.CmdArgs = input.args
+		fs.ContinueOnError = true
+		if err := fs.Parse(); err != nil {
+			t.Errorf("Testing: FlagSet.Parse(); Expected: no error with %q as args; Got: error %q", input.args, err)
+		}
+		if !reflect.DeepEqual(cfg, input.expected) {
+			t.Errorf("Testing: FlagSet.Parse(); Expected: %+v; Got:%+v", input.expected, cfg)
 		}
 	}
 }

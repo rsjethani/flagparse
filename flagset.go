@@ -18,7 +18,7 @@ const (
 )
 
 type FlagSet struct {
-	continueOnError bool
+	ContinueOnError bool
 	name            string
 	Desc            string
 	CmdArgs         []string
@@ -203,28 +203,31 @@ func (fs *FlagSet) parse() error {
 			argsIndex++
 			curState = stateInit
 		case stateOptFlag:
-			flName := curArg[len(fs.OptFlagPrefix):]
-			if fs.optFlags[flName].nArgs == 0 {
-				fs.optFlags[flName].value.Set()
+			flagName := curArg[len(fs.OptFlagPrefix):]
+			if fs.optFlags[flagName].nArgs == 0 {
+				fs.optFlags[flagName].value.Set()
 				argsIndex++
-			} else if fs.optFlags[flName].nArgs < 0 {
-				if err := fs.optFlags[flName].value.Set(argsToParse[argsIndex+1:]...); err != nil {
+			} else if fs.optFlags[flagName].nArgs < 0 {
+				if len(argsToParse[argsIndex:]) < 2 {
+					return fmt.Errorf("invalid no. of arguments for option '%s'; required: at least one, given: 0", curArg)
+				}
+				if err := fs.optFlags[flagName].value.Set(argsToParse[argsIndex+1:]...); err != nil {
 					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
 				}
 				argsIndex = len(argsToParse)
 			} else {
 				inp := []string{}
-				for i := 1; i <= fs.optFlags[flName].nArgs; i++ {
+				for i := 1; i <= fs.optFlags[flagName].nArgs; i++ {
 					v := getArg(i + argsIndex)
 					if v == "" {
-						return fmt.Errorf("invalid no. of arguments for option '%s'; required: %d, given: %d", curArg, fs.optFlags[flName].nArgs, i-1)
+						return fmt.Errorf("invalid no. of arguments for option '%s'; required: %d, given: %d", curArg, fs.optFlags[flagName].nArgs, i-1)
 					}
 					inp = append(inp, v)
 				}
-				if err := fs.optFlags[flName].value.Set(inp...); err != nil {
+				if err := fs.optFlags[flagName].value.Set(inp...); err != nil {
 					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
 				}
-				argsIndex += fs.optFlags[flName].nArgs + 1
+				argsIndex += fs.optFlags[flagName].nArgs + 1
 			}
 			visited[curArg] = true
 			curState = stateInit
@@ -241,7 +244,7 @@ func (fs *FlagSet) parse() error {
 
 func (fs *FlagSet) Parse() error {
 	err := fs.parse()
-	if err != nil && !fs.continueOnError {
+	if err != nil && !fs.ContinueOnError {
 		fmt.Fprintln(fs.usageOut, err)
 		fs.usage()
 		os.Exit(1)
