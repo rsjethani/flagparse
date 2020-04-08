@@ -12,7 +12,6 @@ const (
 	stateInit int = iota
 	statePosFlag
 	stateOptFlag
-	stateNoArgsLeft
 	defaultOptPrefix string = "--"
 	helpOptFlag      string = "--help"
 	packageTag       string = "flagparse"
@@ -148,29 +147,13 @@ func (fs *FlagSet) usage() {
 }
 
 func (fs *FlagSet) parse() error {
-	argsToParse := fs.CmdArgs
-	curState := stateInit
-	var curArg string
+	cmdArgs := fs.CmdArgs
 	visited := make(map[string]bool)
-	var posIndex, argsIndex int
 
-	getArg := func(i int) string {
-		if i < len(argsToParse) {
-			return argsToParse[i]
-		}
-		return ""
-	}
-
-	for {
+	for iArgs, iPos, curState := 0, 0, stateInit; iArgs < len(cmdArgs); {
+		curArg := cmdArgs[iArgs]
 		switch curState {
 		case stateInit:
-			arg := getArg(argsIndex)
-			if arg == "" {
-				curState = stateNoArgsLeft
-				break
-			}
-			curArg = arg
-
 			if curArg == helpOptFlag {
 				return &ErrHelpInvoked{}
 			}
@@ -190,7 +173,7 @@ func (fs *FlagSet) parse() error {
 
 			// if all positional args have not been processed yet then consider
 			// curArg as the value for next positional arg
-			if posIndex < len(fs.posFlags) {
+			if iPos < len(fs.posFlags) {
 				curState = statePosFlag
 				break
 			}
@@ -199,49 +182,48 @@ func (fs *FlagSet) parse() error {
 			// is an undefined positional arg
 			return fmt.Errorf("Unknown positional flag: %s", curArg)
 		case statePosFlag:
-			if err := fs.posFlags[posIndex].value.Set(curArg); err != nil {
-				return fmt.Errorf("error while setting option '%s': %s", fs.posFlags[posIndex].name, err)
+			if err := fs.posFlags[iPos].value.Set(curArg); err != nil {
+				return fmt.Errorf("error while setting option '%s': %s", fs.posFlags[iPos].name, err)
 			}
-			visited[fs.posFlags[posIndex].name] = true
-			posIndex++
-			argsIndex++
+			visited[fs.posFlags[iPos].name] = true
+			iPos++
+			iArgs++
 			curState = stateInit
 		case stateOptFlag:
 			flagName := curArg[len(fs.OptPrefix):]
 			nargs := fs.optFlags[flagName].nArgs
 			if nargs < 0 { // unlimited no. of arguments
-				given := len(argsToParse) - 1 - argsIndex
+				given := len(cmdArgs) - 1 - iArgs
 				if given < 1 {
 					return fmt.Errorf("invalid no. of arguments for option '%s'; required: at least one, given: 0", curArg)
 				}
-				if err := fs.optFlags[flagName].value.Set(argsToParse[argsIndex+1:]...); err != nil {
+				if err := fs.optFlags[flagName].value.Set(cmdArgs[iArgs+1:]...); err != nil {
 					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
 				}
-				argsIndex = len(argsToParse)
+				iArgs = len(cmdArgs)
 			} else if nargs > 0 { // limited no. of arguments
-				given := len(argsToParse) - 1 - argsIndex
+				given := len(cmdArgs) - 1 - iArgs
 				if given < nargs {
 					return fmt.Errorf("invalid no. of arguments for option '%s'; required: %d, given: %d", curArg, nargs, given)
 				}
-				if err := fs.optFlags[flagName].value.Set(argsToParse[argsIndex+1 : argsIndex+1+nargs]...); err != nil {
+				if err := fs.optFlags[flagName].value.Set(cmdArgs[iArgs+1 : iArgs+1+nargs]...); err != nil {
 					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
 				}
-				argsIndex += nargs + 1
+				iArgs += nargs + 1
 			} else { // zero arguments i.e. a switch
 				fs.optFlags[flagName].value.Set()
-				argsIndex++
+				iArgs++
 			}
 			visited[curArg] = true
 			curState = stateInit
-		case stateNoArgsLeft:
-			for _, pos := range fs.posFlags {
-				if !visited[pos.name] {
-					return fmt.Errorf("Error: value for positional flag '%s' not given", pos.name)
-				}
-			}
-			return nil
 		}
 	}
+	for _, pos := range fs.posFlags {
+		if !visited[pos.name] {
+			return fmt.Errorf("Error: value for positional flag '%s' not given", pos.name)
+		}
+	}
+	return nil
 }
 
 func (fs *FlagSet) Parse() error {
