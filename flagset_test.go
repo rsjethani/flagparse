@@ -137,3 +137,36 @@ func Test_usage_UserDefined(t *testing.T) {
 		t.Errorf("Testing: Flagset.usage(); Expected: user defined function should be called; Got: not called")
 	}
 }
+
+type testArgs struct {
+	Pos1 int `flagparse:"positional,help=pos1 help"`
+	// Pos2 []float64 `flagparse:"positional,help=pos2 help,nargs=2"`
+	Opt1 int       `flagparse:"help=opt1 help"`
+	Opt2 []string  `flagparse:"help=opt2 help,nargs=3"`
+	Opt3 []float64 `flagparse:"help=opt3 help,nargs=-1"`
+	Sw1  bool      `flagparse:"help=sw1 help,nargs=0"`
+}
+
+func Test_parse_InvalidInputs(t *testing.T) {
+	args := &testArgs{}
+	fs, err := NewFlagSetFrom(args)
+	if err != nil {
+		t.Errorf("Unexpected error: %q", err)
+	}
+	data := [][]string{
+		{},
+		{"not a number"},
+		{"10", "11.1"},
+		{"10", "--dummy"},
+		{"10", "--opt1", "hello"},
+		{"10", "--opt1", "55", "--opt1", "60"},
+		{"10", "--opt2", "one"},
+		{"10", "--opt3", "45.6", "99.99", "not a float64"},
+	}
+	for _, input := range data {
+		fs.CmdArgs = input
+		if err := fs.parse(); err == nil {
+			t.Errorf("Testing: FlagSet.parse(); Expected error with %+v as args;Got: no error", input)
+		}
+	}
+}
