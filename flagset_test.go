@@ -9,11 +9,11 @@ import (
 func Test_NewFlagSet(t *testing.T) {
 	flagSet := NewFlagSet()
 	expected := &FlagSet{
-		OptFlagPrefix: defaultOptFlagPrefix,
-		optFlags:      make(map[string]*Flag),
-		usageOut:      os.Stderr,
-		name:          os.Args[0],
-		CmdArgs:       os.Args[1:],
+		OptPrefix: defaultOptPrefix,
+		optFlags:  make(map[string]*Flag),
+		usageOut:  os.Stderr,
+		name:      os.Args[0],
+		CmdArgs:   os.Args[1:],
 	}
 	if !reflect.DeepEqual(flagSet, expected) {
 		t.Errorf("Testing: NewFlagSet(); Expected: %#v; Got: %#v", expected, flagSet)
@@ -153,6 +153,8 @@ func Test_Parse_InvalidInputs(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %q", err)
 	}
+	f, _ := os.Create(os.DevNull)
+	fs.SetOutput(f)
 	data := [][]string{
 		{},
 		{"not a number"},

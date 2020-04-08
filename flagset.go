@@ -13,18 +13,23 @@ const (
 	statePosFlag
 	stateOptFlag
 	stateNoArgsLeft
-	defaultOptFlagPrefix string = "--"
-	packageTag           string = "flagparse"
+	defaultOptPrefix string = "--"
+	helpOptFlag      string = "--help"
+	packageTag       string = "flagparse"
 )
+
+type ErrHelpInvoked struct{}
+
+func (e *ErrHelpInvoked) Error() string { return "" }
 
 type FlagSet struct {
 	ContinueOnError bool
 	name            string
 	Desc            string
-	CmdArgs         []string
+	OptPrefix       string
 	Usage           func()
 	usageOut        io.Writer
-	OptFlagPrefix   string
+	CmdArgs         []string
 	posFlags        []*Flag
 	optFlags        map[string]*Flag
 }
@@ -37,11 +42,11 @@ func (fs *FlagSet) SetOutput(w io.Writer) {
 
 func NewFlagSet() *FlagSet {
 	fs := &FlagSet{
-		OptFlagPrefix: defaultOptFlagPrefix,
-		optFlags:      make(map[string]*Flag),
-		usageOut:      os.Stderr,
-		name:          os.Args[0],
-		CmdArgs:       os.Args[1:],
+		OptPrefix: defaultOptPrefix,
+		optFlags:  make(map[string]*Flag),
+		usageOut:  os.Stderr,
+		name:      os.Args[0],
+		CmdArgs:   os.Args[1:],
 	}
 	return fs
 }
@@ -120,13 +125,13 @@ func (fs *FlagSet) defaultUsage() {
 
 	// TODO: show list of opt args in sorted order
 	fmt.Fprint(out, "\n\nOptional Arguments:")
-	fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptFlagPrefix, "help", "Show this help message and exit")
+	fmt.Fprintf(out, "\n  %s\n\t%s", helpOptFlag, "Show this help message and exit")
 	for _, arg := range fs.optFlags {
 		if arg.isSwitch() {
-			fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptFlagPrefix, arg.name, arg.help)
+			fmt.Fprintf(out, "\n  %s%s\n\t%s", fs.OptPrefix, arg.name, arg.help)
 			continue
 		}
-		fmt.Fprintf(out, "\n  %s%s  %T\n\t%s  (Default: %s)", fs.OptFlagPrefix, arg.name, arg.value.Get(), arg.help, arg.defVal)
+		fmt.Fprintf(out, "\n  %s%s  %T\n\t%s  (Default: %s)", fs.OptPrefix, arg.name, arg.value.Get(), arg.help, arg.defVal)
 	}
 
 	fmt.Fprint(out, "\n")
@@ -166,14 +171,13 @@ func (fs *FlagSet) parse() error {
 			}
 			curArg = arg
 
-			if curArg == "--help" {
-				fs.usage()
-				os.Exit(0)
+			if curArg == helpOptFlag {
+				return &ErrHelpInvoked{}
 			}
 
 			// if curArg starts with the configured prefix then process it as an optional arg
-			if strings.HasPrefix(curArg, fs.OptFlagPrefix) {
-				if _, found := fs.optFlags[curArg[len(fs.OptFlagPrefix):]]; found {
+			if strings.HasPrefix(curArg, fs.OptPrefix) {
+				if _, found := fs.optFlags[curArg[len(fs.OptPrefix):]]; found {
 					if visited[curArg] { // if curArg is defined but already processed then return error
 						return fmt.Errorf("option '%s' already given", curArg)
 					}
@@ -203,7 +207,7 @@ func (fs *FlagSet) parse() error {
 			argsIndex++
 			curState = stateInit
 		case stateOptFlag:
-			flagName := curArg[len(fs.OptFlagPrefix):]
+			flagName := curArg[len(fs.OptPrefix):]
 			nargs := fs.optFlags[flagName].nArgs
 			if nargs < 0 { // unlimited no. of arguments
 				given := len(argsToParse) - 1 - argsIndex
@@ -242,10 +246,22 @@ func (fs *FlagSet) parse() error {
 
 func (fs *FlagSet) Parse() error {
 	err := fs.parse()
-	if err != nil && !fs.ContinueOnError {
+
+	if err == nil {
+		return nil
+	}
+
+	var exitCode int
+	switch err.(type) {
+	case *ErrHelpInvoked:
+		exitCode = 1
+	default:
+		exitCode = 2
 		fmt.Fprintln(fs.usageOut, err)
-		fs.usage()
-		os.Exit(1)
+	}
+	fs.usage()
+	if !fs.ContinueOnError {
+		os.Exit(exitCode)
 	}
 	return err
 }
