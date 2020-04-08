@@ -204,30 +204,28 @@ func (fs *FlagSet) parse() error {
 			curState = stateInit
 		case stateOptFlag:
 			flagName := curArg[len(fs.OptFlagPrefix):]
-			if fs.optFlags[flagName].nArgs == 0 {
-				fs.optFlags[flagName].value.Set()
-				argsIndex++
-			} else if fs.optFlags[flagName].nArgs < 0 {
-				if len(argsToParse[argsIndex:]) < 2 {
+			nargs := fs.optFlags[flagName].nArgs
+			if nargs < 0 { // unlimited no. of arguments
+				given := len(argsToParse) - 1 - argsIndex
+				if given < 1 {
 					return fmt.Errorf("invalid no. of arguments for option '%s'; required: at least one, given: 0", curArg)
 				}
 				if err := fs.optFlags[flagName].value.Set(argsToParse[argsIndex+1:]...); err != nil {
 					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
 				}
 				argsIndex = len(argsToParse)
-			} else {
-				inp := []string{}
-				for i := 1; i <= fs.optFlags[flagName].nArgs; i++ {
-					v := getArg(i + argsIndex)
-					if v == "" {
-						return fmt.Errorf("invalid no. of arguments for option '%s'; required: %d, given: %d", curArg, fs.optFlags[flagName].nArgs, i-1)
-					}
-					inp = append(inp, v)
+			} else if nargs > 0 { // limited no. of arguments
+				given := len(argsToParse) - 1 - argsIndex
+				if given < nargs {
+					return fmt.Errorf("invalid no. of arguments for option '%s'; required: %d, given: %d", curArg, nargs, given)
 				}
-				if err := fs.optFlags[flagName].value.Set(inp...); err != nil {
+				if err := fs.optFlags[flagName].value.Set(argsToParse[argsIndex+1 : argsIndex+1+nargs]...); err != nil {
 					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
 				}
-				argsIndex += fs.optFlags[flagName].nArgs + 1
+				argsIndex += nargs + 1
+			} else { // zero arguments i.e. a switch
+				fs.optFlags[flagName].value.Set()
+				argsIndex++
 			}
 			visited[curArg] = true
 			curState = stateInit
