@@ -246,7 +246,6 @@ func (fs *FlagSet) parse() error {
 
 func (fs *FlagSet) Parse() error {
 	err := fs.parse()
-
 	if err == nil {
 		return nil
 	}

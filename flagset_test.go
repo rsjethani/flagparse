@@ -173,6 +173,9 @@ func Test_Parse_InvalidInputs(t *testing.T) {
 		if err := fs.Parse(); err == nil {
 			t.Errorf("Testing: FlagSet.Parse(); Expected: error with %q as args; Got: no error", input)
 		}
+		if _, ok := err.(*ErrHelpInvoked); ok {
+			t.Errorf("Testing: FlagSet.Parse(); Expected: error should not be of %[1]T type with %[2]q args; Got: error %[1]T type", &ErrHelpInvoked{}, input)
+		}
 	}
 }
 
@@ -217,4 +220,24 @@ func Test_Parse_ValidInputs(t *testing.T) {
 			t.Errorf("Testing: FlagSet.Parse(); Expected: %+v; Got:%+v", input.expected, cfg)
 		}
 	}
+}
+
+func Test_Parse_HelpOption(t *testing.T) {
+	cfg := &testConfig{}
+	fs, err := NewFlagSetFrom(cfg)
+	if err != nil {
+		t.Errorf("Unexpected error: %q", err)
+	}
+	fs.ContinueOnError = true
+	f, _ := os.Create(os.DevNull)
+	fs.SetOutput(f)
+	fs.CmdArgs = []string{helpOptFlag}
+	err = fs.Parse()
+	if err == nil {
+		t.Errorf("Testing: FlagSet.Parse(); Expected: error with %q args; Got: no error", fs.CmdArgs)
+	}
+	if _, ok := err.(*ErrHelpInvoked); !ok {
+		t.Errorf("Testing: FlagSet.Parse(); Expected: error of type %T with %q args; Got: error of other type", &ErrHelpInvoked{}, fs.CmdArgs)
+	}
+
 }
