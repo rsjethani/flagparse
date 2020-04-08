@@ -2,6 +2,7 @@ package flagparse
 
 import (
 	"os"
+	"os/exec"
 	"reflect"
 	"testing"
 )
@@ -228,6 +229,7 @@ func Test_Parse_HelpOption(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %q", err)
 	}
+	fs.Desc = "flagset description"
 	fs.ContinueOnError = true
 	f, _ := os.Create(os.DevNull)
 	fs.SetOutput(f)
@@ -239,5 +241,35 @@ func Test_Parse_HelpOption(t *testing.T) {
 	if _, ok := err.(*ErrHelpInvoked); !ok {
 		t.Errorf("Testing: FlagSet.Parse(); Expected: error of type %T with %q args; Got: error of other type", &ErrHelpInvoked{}, fs.CmdArgs)
 	}
+}
 
+func Test_Parse_ExitOnError(t *testing.T) {
+	testParseExit := func() {
+		fs, _ := NewFlagSetFrom(&testConfig{})
+		f, _ := os.Create(os.DevNull)
+		fs.SetOutput(f)
+		fs.CmdArgs = []string{os.Getenv("CMD_ARG")}
+		fs.Parse()
+	}
+	if _, ok := os.LookupEnv("CMD_ARG"); ok {
+		testParseExit()
+		return
+	}
+	data := []struct {
+		arg      string
+		expected int
+	}{
+		{helpOptFlag, 1},
+		{"dummy-flag", 2},
+	}
+	for _, input := range data {
+		cmd := exec.Command(os.Args[0], "-test.run=Test_Parse_ExitOnError")
+		cmd.Env = append(os.Environ(), "CMD_ARG="+input.arg)
+		err := cmd.Run()
+		if e, ok := err.(*exec.ExitError); ok {
+			if e.ExitCode() != input.expected {
+				t.Errorf("Testing: FlagSet.Parse(); Expected: exit code %d with args %q; Got: exit code %d", input.expected, input.arg, e.ExitCode())
+			}
+		}
+	}
 }
