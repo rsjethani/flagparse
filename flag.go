@@ -5,7 +5,6 @@ import (
 )
 
 type Flag struct {
-	// TODO: convert to string for patterns like '*', '+' etc.
 	defVal     string
 	nArgs      int
 	positional bool

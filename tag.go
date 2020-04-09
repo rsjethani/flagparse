@@ -14,12 +14,9 @@ const (
 )
 
 var validTags = map[string]*regexp.Regexp{
-	// "name":  regexp.MustCompile(fmt.Sprintf(`^(name)%s([[:alnum:]-]+)$`, tagKeyValueSep)),
 	"name":  regexp.MustCompile(fmt.Sprintf(`^name%c([[:alnum:]-]+)$`, tagKeyValueSep)),
 	"help":  regexp.MustCompile(fmt.Sprintf(`^help%c(.+)$`, tagKeyValueSep)),
 	"nargs": regexp.MustCompile(fmt.Sprintf(`^nargs%c(-?[[:digit:]]+)$`, tagKeyValueSep)),
-	// "mutex":      nil,
-	// "short":      nil,
 }
 
 func splitKV(src string, sep rune) []string {

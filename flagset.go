@@ -122,7 +122,6 @@ func (fs *FlagSet) defaultUsage() {
 		fmt.Fprintf(out, "\n  %s  %T\n\t%s", p.name, val, p.help)
 	}
 
-	// TODO: show list of opt args in sorted order
 	fmt.Fprint(out, "\n\nOptional Arguments:")
 	fmt.Fprintf(out, "\n  %s\n\t%s", helpOptFlag, "Show this help message and exit")
 	for _, arg := range fs.optFlags {
@@ -136,7 +135,7 @@ func (fs *FlagSet) defaultUsage() {
 	fmt.Fprint(out, "\n")
 }
 
-// usage calls the Usage method for the ArgSet if one is specified,
+// usage calls the Usage method if one is specified,
 // or the appropriate default usage function otherwise.
 func (fs *FlagSet) usage() {
 	if fs.Usage == nil {

@@ -35,18 +35,10 @@ func TestNewValue_SupportedType(t *testing.T) {
 		new([]int),
 		new(bool),
 		new([]bool),
-		// new(uint),
-		// new([]uint),
-		// new(int64),
-		// new([]int64),
 		new(string),
 		new([]string),
-		// new(uint64),
-		// new([]uint64),
 		new(float64),
 		new([]float64),
-		// new(time.Duration),
-		// new([]time.Duration),
 	}
 	for _, val := range supported {
 		_, err := NewValue(val)
