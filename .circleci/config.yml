@@ -17,9 +17,9 @@ jobs:
     steps:
       - checkout
       - go/test:
-          coverprofile: coverage.out
+          coverprofile: coverage.txt
           covermode: atomic
           failfast: true
           race: true
       - codecov/upload:
-          file: coverage.out
+          file: coverage.txt
