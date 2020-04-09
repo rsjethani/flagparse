@@ -1,4 +1,5 @@
-[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](../master/LICENSE)
+[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](../master/LICENSE) [![flagparse](https://circleci.com/gh/rsjethani/flagparse.svg?style=shield)](https://app.circleci.com/pipelines/github/rsjethani/flagparse)
+
 
 # A Powerful Argument Parser for Go
 
