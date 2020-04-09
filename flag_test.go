@@ -13,12 +13,11 @@ func Test_NewSwitchFlag(t *testing.T) {
 		defVal:     "",
 		value:      val,
 		positional: false,
-		name:       "flag-name",
 		help:       "help message",
 	}
-	got := NewSwitchFlag(expected.name, expected.value, expected.help)
+	got := NewSwitchFlag(expected.value, expected.help)
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("Testing: NewSwitchFlag(%q, %#v, %q); Expected: %#v; Got: %#v", expected.name, expected.value, expected.help, expected, got)
+		t.Errorf("Testing: NewSwitchFlag(%#v, %q); Expected: %#v; Got: %#v", expected.value, expected.help, expected, got)
 	}
 }
 
@@ -30,12 +29,11 @@ func Test_NewOptFlag(t *testing.T) {
 		defVal:     val.String(),
 		value:      val,
 		positional: false,
-		name:       "flag-name",
 		help:       "help message",
 	}
-	got := NewOptFlag(expected.name, expected.value, expected.help)
+	got := NewOptFlag(expected.value, expected.help)
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("Testing: NewOptFlag(%q, %#v, %q); Expected: %#v; Got: %#v", expected.name, expected.value, expected.help, expected, got)
+		t.Errorf("Testing: NewOptFlag(%#v, %q); Expected: %#v; Got: %#v", expected.value, expected.help, expected, got)
 	}
 }
 
@@ -47,12 +45,11 @@ func Test_NewPosFlag(t *testing.T) {
 		defVal:     val.String(),
 		value:      val,
 		positional: true,
-		name:       "flag-name",
 		help:       "help message",
 	}
-	got := NewPosFlag(expected.name, expected.value, expected.help)
+	got := NewPosFlag(expected.value, expected.help)
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("Testing: NewPosFlag(%q, %#v, %q); Expected: %#v; Got: %#v", expected.name, expected.value, expected.help, expected, got)
+		t.Errorf("Testing: NewPosFlag(%#v, %q); Expected: %#v; Got: %#v", expected.value, expected.help, expected, got)
 	}
 }
 
@@ -60,12 +57,12 @@ func Test_SetNArgs_WithPositionalFlag(t *testing.T) {
 	testVar := 100
 	testVal := NewInt(&testVar)
 
-	posFlag := NewPosFlag("pos1", testVal, "help")
+	posFlag := NewPosFlag(testVal, "help")
 	if err := posFlag.SetNArgs(0); err == nil {
 		t.Errorf("Testing: Flag.SetNArgs(0); Expected: error; Got: no error")
 	}
 
-	posFlag = NewPosFlag("pos1", testVal, "help")
+	posFlag = NewPosFlag(testVal, "help")
 	expected := *posFlag
 	expected.nArgs = 10
 	if err := posFlag.SetNArgs(10); err != nil || !reflect.DeepEqual(*posFlag, expected) {
@@ -77,7 +74,7 @@ func Test_SetNArgs_WithOptionalFlag(t *testing.T) {
 	testVar := 100
 	testVal := NewInt(&testVar)
 
-	optFlag := NewOptFlag("opt1", testVal, "help")
+	optFlag := NewOptFlag(testVal, "help")
 	expected := *optFlag
 	expected.nArgs = 0
 	expected.optToSwitch()
@@ -85,7 +82,7 @@ func Test_SetNArgs_WithOptionalFlag(t *testing.T) {
 		t.Errorf("Testing: Flag.SetNArgs(0); Expected: no error and %#v; Got: error %v, %#v", expected, err, *optFlag)
 	}
 
-	optFlag = NewOptFlag("opt1", testVal, "help")
+	optFlag = NewOptFlag(testVal, "help")
 	expected = *optFlag
 	expected.nArgs = 10
 	if err := optFlag.SetNArgs(10); err != nil || !reflect.DeepEqual(*optFlag, expected) {
@@ -97,13 +94,13 @@ func Test_SetNArgs_WithSwitchFlag(t *testing.T) {
 	testVar := 100
 	testVal := NewInt(&testVar)
 
-	swFlag := NewSwitchFlag("opt1", testVal, "help")
+	swFlag := NewSwitchFlag(testVal, "help")
 	expected := *swFlag
 	if err := swFlag.SetNArgs(0); err != nil || !reflect.DeepEqual(*swFlag, expected) {
 		t.Errorf("Testing: Flag.SetNArgs(0); Expected: no error and %#v; Got: error %v, %#v", expected, err, *swFlag)
 	}
 
-	swFlag = NewSwitchFlag("opt1", testVal, "help")
+	swFlag = NewSwitchFlag(testVal, "help")
 	expected = *swFlag
 	expected.nArgs = 10
 	expected.switchToOpt()

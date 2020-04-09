@@ -9,28 +9,26 @@ type Flag struct {
 	nArgs      int
 	positional bool
 	value      Value
-	name       string
 	help       string
 }
 
-func NewPosFlag(name string, value Value, help string) *Flag {
-	fl := NewSwitchFlag(name, value, help)
+func NewPosFlag(value Value, help string) *Flag {
+	fl := NewSwitchFlag(value, help)
 	fl.nArgs = 1
 	fl.positional = true
 	fl.defVal = value.String()
 	return fl
 }
 
-func NewOptFlag(name string, value Value, help string) *Flag {
-	fl := NewSwitchFlag(name, value, help)
+func NewOptFlag(value Value, help string) *Flag {
+	fl := NewSwitchFlag(value, help)
 	fl.nArgs = 1
 	fl.defVal = value.String()
 	return fl
 }
 
-func NewSwitchFlag(name string, value Value, help string) *Flag {
+func NewSwitchFlag(value Value, help string) *Flag {
 	return &Flag{
-		name:  name,
 		value: value,
 		help:  help,
 	}
