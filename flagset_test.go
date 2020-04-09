@@ -140,8 +140,8 @@ func Test_usage_UserDefined(t *testing.T) {
 }
 
 type testConfig struct {
-	Pos1 int `flagparse:"positional,help=pos1 help"`
-	// Pos2 []float64 `flagparse:"positional,help=pos2 help,nargs=2"`
+	Pos1 int       `flagparse:"positional,help=pos1 help"`
+	Pos2 []float64 `flagparse:"positional,help=pos2 help,nargs=2"`
 	Opt1 int       `flagparse:"help=opt1 help"`
 	Opt2 []string  `flagparse:"help=opt2 help,nargs=2"`
 	Opt3 []float64 `flagparse:"help=opt3 help,nargs=-1"`
@@ -159,7 +159,8 @@ func Test_Parse_InvalidInputs(t *testing.T) {
 	data := [][]string{
 		{},
 		{"not a number"},
-		{"10", "11.1"},
+		{"10", "1.1"},
+		{"10", "1.1", "2.2", "3.3"},
 		{"10", "--dummy"},
 		{"10", "--opt1", "hello"},
 		{"10", "--opt1", "55", "--opt1", "60"},
@@ -182,7 +183,6 @@ func Test_Parse_InvalidInputs(t *testing.T) {
 
 func Test_Parse_ValidInputs(t *testing.T) {
 	cfg := &testConfig{
-		Pos1: -99,
 		Opt1: -999,
 		Opt2: []string{"hello", "world"},
 		Opt3: []float64{5.5},
@@ -192,14 +192,17 @@ func Test_Parse_ValidInputs(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %q", err)
 	}
+	f, _ := os.Create(os.DevNull)
+	fs.SetOutput(f)
 	data := []struct {
 		args     []string
 		expected *testConfig
 	}{
 		{
-			args: []string{"10"},
+			args: []string{"10", "1.2", "3.4"},
 			expected: &testConfig{
 				Pos1: 10,
+				Pos2: []float64{1.2, 3.4},
 				Opt1: -999,
 				Opt2: []string{"hello", "world"},
 				Opt3: []float64{5.5},
@@ -207,8 +210,14 @@ func Test_Parse_ValidInputs(t *testing.T) {
 			},
 		},
 		{
-			args:     []string{"20", "--sw1", "--opt1", "100", "--opt2", "one", "two", "--opt3", "1.1", "2.2", "3.3"},
-			expected: &testConfig{Pos1: 20, Opt1: 100, Opt2: []string{"one", "two"}, Opt3: []float64{1.1, 2.2, 3.3}, Sw1: true},
+			args: []string{"20", "1.2", "3.4", "--sw1", "--opt1", "100", "--opt2", "one", "two", "--opt3", "1.1", "2.2", "3.3"},
+			expected: &testConfig{
+				Pos1: 20,
+				Pos2: []float64{1.2, 3.4},
+				Opt1: 100,
+				Opt2: []string{"one", "two"},
+				Opt3: []float64{1.1, 2.2, 3.3},
+				Sw1:  true},
 		},
 	}
 	for _, input := range data {
@@ -219,6 +228,51 @@ func Test_Parse_ValidInputs(t *testing.T) {
 		}
 		if !reflect.DeepEqual(cfg, input.expected) {
 			t.Errorf("Testing: FlagSet.Parse(); Expected: %+v; Got:%+v", input.expected, cfg)
+		}
+	}
+}
+
+func Test_Parse_PosFlagWithUnlimitedArgs(t *testing.T) {
+	type testCfg struct {
+		Pos1 []int `flagparse:"positional,nargs=-1"`
+	}
+	cfg := &testCfg{}
+	fs, err := NewFlagSetFrom(cfg)
+	if err != nil {
+		t.Errorf("Unexpected error: %q", err)
+	}
+	f, _ := os.Create(os.DevNull)
+	fs.SetOutput(f)
+	fs.ContinueOnError = true
+
+	good := []struct {
+		args     []string
+		expected *testCfg
+	}{
+		{
+			args:     []string{"11"},
+			expected: &testCfg{Pos1: []int{11}},
+		},
+		{
+			args:     []string{"11", "22", "33", "44", "55"},
+			expected: &testCfg{Pos1: []int{11, 22, 33, 44, 55}},
+		},
+	}
+	for _, input := range good {
+		fs.CmdArgs = input.args
+		if err := fs.Parse(); err != nil {
+			t.Errorf("Testing: FlagSet.Parse(); Expected: no error with %q as args; Got: error %q", input.args, err)
+		}
+		if !reflect.DeepEqual(cfg, input.expected) {
+			t.Errorf("Testing: FlagSet.Parse(); Expected: %+v; Got:%+v", input.expected, cfg)
+		}
+	}
+
+	bad := [][]string{[]string{}, []string{"11", "22", "33", "44abc", "55"}}
+	for _, input := range bad {
+		fs.CmdArgs = input
+		if err := fs.Parse(); err == nil {
+			t.Errorf("Testing: FlagSet.Parse(); Expected: error with %q as args; Got: no error", input)
 		}
 	}
 }

@@ -160,18 +160,19 @@ func (fs *FlagSet) parse() error {
 
 			// if curArg starts with the configured prefix then process it as an optional arg
 			if strings.HasPrefix(curArg, fs.OptPrefix) {
-				if _, found := fs.optFlags[curArg[len(fs.OptPrefix):]]; found {
-					if visited[curArg] { // if curArg is defined but already processed then return error
-						return fmt.Errorf("option '%s' already given", curArg)
+				name := curArg[len(fs.OptPrefix):]
+				if _, found := fs.optFlags[name]; found {
+					if visited[name] { // if defined but already processed then return error
+						return fmt.Errorf("flag '%s' already given", curArg)
 					}
 					curState = stateOptFlag
 					break
-				} else { // if curArg is not defined as an opt arg then return error
+				} else { // if not defined as an opt arg then return error
 					return fmt.Errorf("unknown optional flag: %s", curArg)
 				}
 			}
 
-			// if all positional args have not been processed yet then consider
+			// if all positional flags have not been processed yet then consider
 			// curArg as the value for next positional arg
 			if iPos < len(fs.posFlags) {
 				curState = statePosFlag
@@ -179,7 +180,7 @@ func (fs *FlagSet) parse() error {
 			}
 
 			// since all defined positional and optional args have been processed, curArg
-			// is an undefined positional arg
+			// is an undefined positional flag
 			return fmt.Errorf("Unknown positional flag: %s", curArg)
 		case statePosFlag:
 			name := fs.posFlags[iPos].name
@@ -187,9 +188,6 @@ func (fs *FlagSet) parse() error {
 			nargs := fs.posFlags[iPos].nArgs
 			given := len(cmdArgs) - iArgs
 			if nargs < 0 {
-				if given < 1 {
-					return fmt.Errorf("invalid no. of arguments for flag '%s'; required: at least one, given: 0", name)
-				}
 				if err := val.Set(cmdArgs[iArgs:]...); err != nil {
 					return fmt.Errorf("error while setting flag '%s': %s", name, err)
 				}
@@ -231,7 +229,7 @@ func (fs *FlagSet) parse() error {
 				val.Set()
 				iArgs++
 			}
-			visited[curArg] = true
+			visited[name] = true
 			curState = stateInit
 		}
 	}
