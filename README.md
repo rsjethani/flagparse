@@ -1,3 +1,6 @@
+![GitHub](https://img.shields.io/github/license/rsjethani/flagparse) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/rsjethani/flagparse) [![GoDoc](https://img.shields.io/badge/godoc-reference-blue)](https://pkg.go.dev/github.com/rsjethani/flagparse) [![flagparse](https://circleci.com/gh/rsjethani/flagparse.svg?style=shield)](https://app.circleci.com/pipelines/github/rsjethani/flagparse) 
+
+
 # A Powerful Argument Parser for Go
 
 ## Struct Tags Syntax
@@ -23,3 +26,4 @@ type <struct name> struct {
 ## Example
 
 For full examples please refer to `examples/`.
+L
