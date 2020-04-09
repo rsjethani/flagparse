@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   go: circleci/go@1.1.1
+  codecov: codecov/codecov@1.0.5
 
 workflows:
   main:
@@ -16,6 +17,9 @@ jobs:
     steps:
       - checkout
       - go/test:
+          coverprofile: coverage.out
           covermode: atomic
           failfast: true
           race: true
+      - codecov/upload:
+          file: coverage.out
