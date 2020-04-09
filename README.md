@@ -1,3 +1,5 @@
+[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](../master/LICENSE)
+
 # A Powerful Argument Parser for Go
 
 ## Struct Tags Syntax
@@ -23,3 +25,4 @@ type <struct name> struct {
 ## Example
 
 For full examples please refer to `examples/`.
+L
