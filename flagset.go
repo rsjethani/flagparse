@@ -182,36 +182,53 @@ func (fs *FlagSet) parse() error {
 			// is an undefined positional arg
 			return fmt.Errorf("Unknown positional flag: %s", curArg)
 		case statePosFlag:
-			if err := fs.posFlags[iPos].value.Set(curArg); err != nil {
-				return fmt.Errorf("error while setting option '%s': %s", fs.posFlags[iPos].name, err)
+			name := fs.posFlags[iPos].name
+			val := fs.posFlags[iPos].value
+			nargs := fs.posFlags[iPos].nArgs
+			given := len(cmdArgs) - iArgs
+			if nargs < 0 {
+				if given < 1 {
+					return fmt.Errorf("invalid no. of arguments for flag '%s'; required: at least one, given: 0", name)
+				}
+				if err := val.Set(cmdArgs[iArgs:]...); err != nil {
+					return fmt.Errorf("error while setting flag '%s': %s", name, err)
+				}
+				iArgs = len(cmdArgs)
+			} else {
+				if given < nargs {
+					return fmt.Errorf("invalid no. of arguments for flag '%s'; required: %d, given: %d", name, nargs, given)
+				}
+				if err := val.Set(cmdArgs[iArgs : iArgs+nargs]...); err != nil {
+					return fmt.Errorf("error while setting flag '%s': %s", name, err)
+				}
+				iArgs += nargs
 			}
-			visited[fs.posFlags[iPos].name] = true
 			iPos++
-			iArgs++
+			visited[name] = true
 			curState = stateInit
 		case stateOptFlag:
-			flagName := curArg[len(fs.OptPrefix):]
-			nargs := fs.optFlags[flagName].nArgs
+			name := curArg[len(fs.OptPrefix):]
+			val := fs.optFlags[name].value
+			nargs := fs.optFlags[name].nArgs
+			given := len(cmdArgs) - 1 - iArgs
 			if nargs < 0 { // unlimited no. of arguments
-				given := len(cmdArgs) - 1 - iArgs
 				if given < 1 {
-					return fmt.Errorf("invalid no. of arguments for option '%s'; required: at least one, given: 0", curArg)
+					return fmt.Errorf("invalid no. of arguments for flag '%s'; required: at least one, given: 0", curArg)
 				}
-				if err := fs.optFlags[flagName].value.Set(cmdArgs[iArgs+1:]...); err != nil {
-					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
+				if err := val.Set(cmdArgs[iArgs+1:]...); err != nil {
+					return fmt.Errorf("error while setting flag '%s': %s", curArg, err)
 				}
 				iArgs = len(cmdArgs)
 			} else if nargs > 0 { // limited no. of arguments
-				given := len(cmdArgs) - 1 - iArgs
 				if given < nargs {
-					return fmt.Errorf("invalid no. of arguments for option '%s'; required: %d, given: %d", curArg, nargs, given)
+					return fmt.Errorf("invalid no. of arguments for flag '%s'; required: %d, given: %d", curArg, nargs, given)
 				}
-				if err := fs.optFlags[flagName].value.Set(cmdArgs[iArgs+1 : iArgs+1+nargs]...); err != nil {
-					return fmt.Errorf("error while setting option '%s': %s", curArg, err)
+				if err := val.Set(cmdArgs[iArgs+1 : iArgs+1+nargs]...); err != nil {
+					return fmt.Errorf("error while setting flag '%s': %s", curArg, err)
 				}
 				iArgs += nargs + 1
 			} else { // zero arguments i.e. a switch
-				fs.optFlags[flagName].value.Set()
+				val.Set()
 				iArgs++
 			}
 			visited[curArg] = true
