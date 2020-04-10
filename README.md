@@ -1,4 +1,4 @@
-![GitHub](https://img.shields.io/github/license/rsjethani/flagparse) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/rsjethani/flagparse) [![GoDoc](https://img.shields.io/badge/godoc-reference-blue)](https://pkg.go.dev/github.com/rsjethani/flagparse) [![flagparse](https://circleci.com/gh/rsjethani/flagparse.svg?style=shield)](https://app.circleci.com/pipelines/github/rsjethani/flagparse) ![Codecov](https://img.shields.io/codecov/c/github/rsjethani/flagparse)
+![GitHub](https://img.shields.io/github/license/rsjethani/flagparse?color=blue) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/rsjethani/flagparse) [![GoDoc](https://img.shields.io/badge/godoc-reference-blue)](https://pkg.go.dev/github.com/rsjethani/flagparse) [![flagparse](https://circleci.com/gh/rsjethani/flagparse.svg?style=shield)](https://app.circleci.com/pipelines/github/rsjethani/flagparse) ![Codecov](https://img.shields.io/codecov/c/github/rsjethani/flagparse)
 
 
 # A Powerful Commandline Flags Parser for Go
