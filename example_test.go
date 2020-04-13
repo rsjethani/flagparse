@@ -6,7 +6,7 @@ import (
 	"github.com/rsjethani/flagparse"
 )
 
-func Example_manualApproach() {
+func Example_aPIApproach() {
 	cfg := struct {
 		Pos1 int
 		Pos2 []float64
@@ -32,6 +32,7 @@ func Example_manualApproach() {
 	fs.Add("opt2", fl)
 
 	fl = flagparse.NewBoolFlag(&cfg.Sw1, false, "sw1 usage")
+	// make this optional flag a switch
 	fl.SetNArgs(0)
 	fs.Add("sw1", fl)
 
