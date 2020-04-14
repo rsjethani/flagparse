@@ -23,7 +23,7 @@ func Test_splitKV(t *testing.T) {
 func Test_parseKVs_InvalidKeyValues(t *testing.T) {
 	invalidKVs := []string{
 		"hello",
-		"help=",
+		"usage=",
 		"hello=hi",
 		"name=flag_name",
 		"nargs=1x",
@@ -46,20 +46,20 @@ func Test_parseKVs_ValidKeyValues(t *testing.T) {
 			map[string]string{},
 		},
 		{
-			"positional,name=flag-name,help=a help message,nargs=10",
+			"positional,name=flag-name,usage=a usage message,nargs=10",
 			map[string]string{
-				"nargs": "10",
-				posKey:  "yes",
-				"name":  "flag-name",
-				"help":  "a help message",
+				nargsKey: "10",
+				posKey:   "yes",
+				nameKey:  "flag-name",
+				usageKey: "a usage message",
 			},
 		},
 		{
-			"name=ArgName10,help=abc,nargs=-10",
+			"name=ArgName10,usage=abc,nargs=-10",
 			map[string]string{
-				"nargs": "-10",
-				"name":  "ArgName10",
-				"help":  "abc",
+				nargsKey: "-10",
+				nameKey:  "ArgName10",
+				usageKey: "abc",
 			},
 		},
 	}
@@ -77,11 +77,11 @@ func Test_parseKVs_ValidKeyValues(t *testing.T) {
 }
 
 func Test_newFlagFromKVs_InvalidInput(t *testing.T) {
-	testValue := NewInt(new(int))
+	testValue := newIntValue(new(int))
 	data := []map[string]string{
-		{posKey: "yes", "nargs": "0"},
-		{"nargs": "123abc"},
-		{"nargs": "99999999999999999999999999999999999999"},
+		{posKey: "yes", nargsKey: "0"},
+		{nargsKey: "123abc"},
+		{nargsKey: "99999999999999999999999999999999999999"},
 	}
 
 	for _, input := range data {
@@ -93,19 +93,19 @@ func Test_newFlagFromKVs_InvalidInput(t *testing.T) {
 
 func Test_newFlagFromKVs_ValidInput(t *testing.T) {
 	x := 100
-	testValue := NewInt(&x)
-	helpMsg := "help message"
+	testValue := newIntValue(&x)
+	usageMsg := "usage message"
 	data := []struct {
 		keyValues map[string]string
 		expected  Flag
 	}{
 		{
-			keyValues: map[string]string{posKey: "yes", "help": helpMsg, "nargs": "10"},
-			expected:  Flag{value: testValue, defVal: testValue.String(), positional: true, nArgs: 10, help: helpMsg},
+			keyValues: map[string]string{posKey: "yes", usageKey: usageMsg, nargsKey: "10"},
+			expected:  Flag{value: testValue, defVal: testValue.String(), positional: true, nArgs: 10, usage: usageMsg},
 		},
 		{
-			keyValues: map[string]string{"help": helpMsg, "nargs": "10"},
-			expected:  Flag{value: testValue, defVal: testValue.String(), positional: false, nArgs: 10, help: helpMsg},
+			keyValues: map[string]string{usageKey: usageMsg, nargsKey: "10"},
+			expected:  Flag{value: testValue, defVal: testValue.String(), positional: false, nArgs: 10, usage: usageMsg},
 		},
 	}
 

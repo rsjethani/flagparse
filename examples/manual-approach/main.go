@@ -12,9 +12,12 @@ func main() {
 	var opt1 string
 
 	fs := flagparse.NewFlagSet()
-	fs.Add("pos1", flagparse.NewPosFlag(flagparse.NewInt(&pos1), "pos1 help"))
-	fs.Add("opt1", flagparse.NewOptFlag(flagparse.NewString(&opt1), "opt1 help"))
-	fs.Add("sw1", flagparse.NewSwitchFlag(flagparse.NewBool(&sw1), "sw1 help"))
+	fs.Add("pos1", flagparse.NewIntFlag(&pos1, true, "pos1 usage"))
+	fs.Add("opt1", flagparse.NewStringFlag(&opt1, false, "opt1 usage"))
+
+	sw1Flag := flagparse.NewBoolFlag(&sw1, false, "sw1 usage")
+	sw1Flag.SetNArgs(0)
+	fs.Add("sw1", sw1Flag)
 
 	fmt.Println("before parse: ", pos1, opt1, sw1)
 	fs.Parse()

@@ -22,7 +22,6 @@ func Test_NewFlagSet(t *testing.T) {
 }
 
 func Test_Add_FlagToFlagSet(t *testing.T) {
-	testValue := NewInt(new(int))
 	expected := NewFlagSet()
 
 	fs := NewFlagSet()
@@ -31,21 +30,25 @@ func Test_Add_FlagToFlagSet(t *testing.T) {
 		t.Errorf("Testing: FlagSet.Add(nil); Expected: %+v; Got: %+v", expected, fs)
 	}
 
-	posFlag := NewPosFlag(testValue, "help")
+	posVar := 100
+	posFlag := NewIntFlag(&posVar, true, "")
 	expected.posFlags = append(expected.posFlags, posWithName{"pos1", posFlag})
 	fs.Add("pos1", posFlag)
 	if !reflect.DeepEqual(fs, expected) {
 		t.Errorf("Testing: FlagSet.Add(%+v); Expected: %+v; Got: %+v", posFlag, expected, fs)
 	}
 
-	optFlag := NewOptFlag(testValue, "help")
+	optVar := 100
+	optFlag := NewIntFlag(&optVar, false, "")
 	expected.optFlags[fs.OptPrefix+"opt1"] = optFlag
 	fs.Add("opt1", optFlag)
 	if !reflect.DeepEqual(fs, expected) {
 		t.Errorf("Testing: FlagSet.Add(%+v); Expected: %+v; Got: %+v", optFlag, expected, fs)
 	}
 
-	swFlag := NewSwitchFlag(testValue, "help")
+	swVar := 100
+	swFlag := NewIntFlag(&swVar, false, "")
+	swFlag.SetNArgs(0)
 	expected.optFlags[fs.OptPrefix+"sw1"] = swFlag
 	fs.Add("sw1", swFlag)
 	if !reflect.DeepEqual(fs, expected) {
@@ -118,19 +121,19 @@ func Test_usage_UserDefined(t *testing.T) {
 }
 
 type testConfig struct {
-	Pos1 int       `flagparse:"positional,help=pos1 help"`
-	Pos2 []float64 `flagparse:"positional,help=pos2 help,nargs=2"`
-	Opt1 int       `flagparse:"help=opt1 help"`
-	Opt2 []string  `flagparse:"help=opt2 help,nargs=2"`
-	Opt3 []float64 `flagparse:"help=opt3 help,nargs=-1"`
-	Sw1  bool      `flagparse:"help=sw1 help,nargs=0"`
+	Pos1 int       `flagparse:"positional,usage=pos1 usage"`
+	Pos2 []float64 `flagparse:"positional,usage=pos2 usage,nargs=2"`
+	Opt1 int       `flagparse:"usage=opt1 usage"`
+	Opt2 []string  `flagparse:"usage=opt2 usage,nargs=2"`
+	Opt3 []float64 `flagparse:"usage=opt3 usage,nargs=-1"`
+	Sw1  bool      `flagparse:"usage=sw1 usage,nargs=0"`
 }
 
 func Test_Parse_InvalidInputs(t *testing.T) {
 	cfg := &testConfig{}
 	fs, err := NewFlagSetFrom(cfg)
 	if err != nil {
-		t.Errorf("Unexpected error: %q", err)
+		t.Fatalf("Unexpected error: %q", err)
 	}
 	f, _ := os.Create(os.DevNull)
 	fs.SetOutput(f)
@@ -168,7 +171,7 @@ func Test_Parse_ValidInputs(t *testing.T) {
 	}
 	fs, err := NewFlagSetFrom(cfg)
 	if err != nil {
-		t.Errorf("Unexpected error: %q", err)
+		t.Fatalf("Unexpected error: %q", err)
 	}
 	f, _ := os.Create(os.DevNull)
 	fs.SetOutput(f)
@@ -217,7 +220,7 @@ func Test_Parse_PosFlagWithUnlimitedArgs(t *testing.T) {
 	cfg := &testCfg{}
 	fs, err := NewFlagSetFrom(cfg)
 	if err != nil {
-		t.Errorf("Unexpected error: %q", err)
+		t.Fatalf("Unexpected error: %q", err)
 	}
 	f, _ := os.Create(os.DevNull)
 	fs.SetOutput(f)
@@ -246,7 +249,7 @@ func Test_Parse_PosFlagWithUnlimitedArgs(t *testing.T) {
 		}
 	}
 
-	bad := [][]string{[]string{}, []string{"11", "22", "33", "44abc", "55"}}
+	bad := [][]string{{}, {"11", "22", "33", "44abc", "55"}}
 	for _, input := range bad {
 		fs.CmdArgs = input
 		if err := fs.Parse(); err == nil {
@@ -256,17 +259,13 @@ func Test_Parse_PosFlagWithUnlimitedArgs(t *testing.T) {
 }
 
 func Test_Parse_HelpOption(t *testing.T) {
-	cfg := &testConfig{}
-	fs, err := NewFlagSetFrom(cfg)
-	if err != nil {
-		t.Errorf("Unexpected error: %q", err)
-	}
+	fs, _ := NewFlagSetFrom(&testConfig{})
 	fs.Desc = "flagset description"
 	fs.ContinueOnError = true
 	f, _ := os.Create(os.DevNull)
 	fs.SetOutput(f)
-	fs.CmdArgs = []string{helpOptFlag}
-	err = fs.Parse()
+	fs.CmdArgs = []string{helpFlag}
+	err := fs.Parse()
 	if err == nil {
 		t.Errorf("Testing: FlagSet.Parse(); Expected: error with %q args; Got: no error", fs.CmdArgs)
 	}
@@ -291,7 +290,7 @@ func Test_Parse_ExitOnError(t *testing.T) {
 		arg      string
 		expected int
 	}{
-		{helpOptFlag, 1},
+		{helpFlag, 1},
 		{"dummy-flag", 2},
 	}
 	for _, input := range data {

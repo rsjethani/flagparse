@@ -9,28 +9,16 @@ type Flag struct {
 	nArgs      int
 	positional bool
 	value      Value
-	help       string
+	usage      string
 }
 
-func NewPosFlag(value Value, help string) *Flag {
-	fl := NewSwitchFlag(value, help)
-	fl.nArgs = 1
-	fl.positional = true
-	fl.defVal = value.String()
-	return fl
-}
-
-func NewOptFlag(value Value, help string) *Flag {
-	fl := NewSwitchFlag(value, help)
-	fl.nArgs = 1
-	fl.defVal = value.String()
-	return fl
-}
-
-func NewSwitchFlag(value Value, help string) *Flag {
+func newFlag(val Value, pos bool, usage string) *Flag {
 	return &Flag{
-		value: value,
-		help:  help,
+		nArgs:      1,
+		value:      val,
+		usage:      usage,
+		positional: pos,
+		defVal:     val.String(),
 	}
 }
 
@@ -59,4 +47,40 @@ func (fl *Flag) SetNArgs(n int) error {
 	}
 	fl.nArgs = n
 	return nil
+}
+
+func NewFlag(val Value, pos bool, usage string) *Flag {
+	return newFlag(val, pos, usage)
+}
+
+func NewBoolFlag(val *bool, pos bool, usage string) *Flag {
+	return newFlag(newBoolValue(val), pos, usage)
+}
+
+func NewBoolListFlag(val *[]bool, pos bool, usage string) *Flag {
+	return newFlag(newBoolListValue(val), pos, usage)
+}
+
+func NewStringFlag(val *string, pos bool, usage string) *Flag {
+	return newFlag(newStringValue(val), pos, usage)
+}
+
+func NewStringListFlag(val *[]string, pos bool, usage string) *Flag {
+	return newFlag(newStringListValue(val), pos, usage)
+}
+
+func NewIntFlag(val *int, pos bool, usage string) *Flag {
+	return newFlag(newIntValue(val), pos, usage)
+}
+
+func NewIntListFlag(val *[]int, pos bool, usage string) *Flag {
+	return newFlag(newIntListValue(val), pos, usage)
+}
+
+func NewFloat64Flag(val *float64, pos bool, usage string) *Flag {
+	return newFlag(newFloat64Value(val), pos, usage)
+}
+
+func NewFloat64ListFlag(val *[]float64, pos bool, usage string) *Flag {
+	return newFlag(newFloat64ListValue(val), pos, usage)
 }

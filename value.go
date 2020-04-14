@@ -25,41 +25,41 @@ type Value interface {
 	String() string
 }
 
-// NewValue takes address of a variable and returns a compatible Value type so that it can be used
+// newValue takes address of a variable and returns a compatible Value type so that it can be used
 // with this package. It returns error if there is no compatible type for the variable.
-func NewValue(v interface{}) (Value, error) {
+func newValue(v interface{}) (Value, error) {
 	switch addr := v.(type) {
 	case Value: // the type itself implements Value interface hence simply return addr
 		return addr, nil
 	case *bool:
-		return NewBool(addr), nil
+		return newBoolValue(addr), nil
 	case *[]bool:
-		return NewBoolList(addr), nil
+		return newBoolListValue(addr), nil
 	case *string:
-		return NewString(addr), nil
+		return newStringValue(addr), nil
 	case *[]string:
-		return NewStringList(addr), nil
+		return newStringListValue(addr), nil
 	case *int:
-		return NewInt(addr), nil
+		return newIntValue(addr), nil
 	case *[]int:
-		return NewIntList(addr), nil
+		return newIntListValue(addr), nil
 	case *float64:
-		return NewFloat64(addr), nil
+		return newFloat64Value(addr), nil
 	case *[]float64:
-		return NewFloat64List(addr), nil
+		return newFloat64ListValue(addr), nil
 	default:
-		return nil, fmt.Errorf("unsupported type: %T", addr)
+		return nil, fmt.Errorf("type '%T' does not implement the Value interface", addr)
 	}
 }
 
-// Bool type represents a bool value and also implements Value interface
-type Bool bool
+// boolValue type represents a bool value and also implements Value interface
+type boolValue bool
 
-func NewBool(p *bool) *Bool {
-	return (*Bool)(p)
+func newBoolValue(p *bool) *boolValue {
+	return (*boolValue)(p)
 }
 
-func (b *Bool) Set(values ...string) error {
+func (b *boolValue) Set(values ...string) error {
 	if len(values) == 0 {
 		// since Bool is a switch type calling Set() without args should set it to true
 		values = append(values, "true")
@@ -68,22 +68,22 @@ func (b *Bool) Set(values ...string) error {
 	if err != nil {
 		return formatParseError(values[0], fmt.Sprintf("%T", true), err)
 	}
-	*b = Bool(v)
+	*b = boolValue(v)
 	return nil
 }
 
-func (b *Bool) Get() interface{} { return bool(*b) }
+func (b *boolValue) Get() interface{} { return bool(*b) }
 
-func (b *Bool) String() string { return fmt.Sprint(*b) }
+func (b *boolValue) String() string { return fmt.Sprint(*b) }
 
-// Bool type represents a bool value and also implements Value interface
-type BoolList []bool
+// boolListValue type represents a bool value and also implements Value interface
+type boolListValue []bool
 
-func NewBoolList(p *[]bool) *BoolList {
-	return (*BoolList)(p)
+func newBoolListValue(p *[]bool) *boolListValue {
+	return (*boolListValue)(p)
 }
 
-func (bl *BoolList) Set(values ...string) error {
+func (bl *boolListValue) Set(values ...string) error {
 	*bl = make([]bool, len(values))
 	for i, val := range values {
 		v, err := strconv.ParseBool(val)
@@ -96,20 +96,20 @@ func (bl *BoolList) Set(values ...string) error {
 	return nil
 }
 
-func (bl *BoolList) Get() interface{} { return []bool(*bl) }
+func (bl *boolListValue) Get() interface{} { return []bool(*bl) }
 
-func (bl *BoolList) String() string { return fmt.Sprint(*bl) }
+func (bl *boolListValue) String() string { return fmt.Sprint(*bl) }
 
-// Int type represents an int value
-type Int int
+// intValue type represents an int value
+type intValue int
 
-func NewInt(p *int) *Int {
-	return (*Int)(p)
+func newIntValue(p *int) *intValue {
+	return (*intValue)(p)
 }
 
 // implement set like Bool does...do not change pointed value to zero if
 // we get error while converting cmd arg string
-func (i *Int) Set(values ...string) error {
+func (i *intValue) Set(values ...string) error {
 	if len(values) == 0 {
 		return nil
 	}
@@ -117,22 +117,22 @@ func (i *Int) Set(values ...string) error {
 	if err != nil {
 		return formatParseError(values[0], fmt.Sprintf("%T", int(1)), err)
 	}
-	*i = Int(v)
+	*i = intValue(v)
 	return nil
 }
 
-func (i *Int) Get() interface{} { return int(*i) }
+func (i *intValue) Get() interface{} { return int(*i) }
 
-func (i *Int) String() string { return strconv.Itoa(int(*i)) }
+func (i *intValue) String() string { return strconv.Itoa(int(*i)) }
 
-// IntList type representing a list of integer values
-type IntList []int
+// intListValue type representing a list of integer values
+type intListValue []int
 
-func NewIntList(p *[]int) *IntList {
-	return (*IntList)(p)
+func newIntListValue(p *[]int) *intListValue {
+	return (*intListValue)(p)
 }
 
-func (il *IntList) Set(values ...string) error {
+func (il *intListValue) Set(values ...string) error {
 	*il = make([]int, len(values))
 	for i, val := range values {
 		n, err := strconv.ParseInt(val, 0, strconv.IntSize)
@@ -144,37 +144,37 @@ func (il *IntList) Set(values ...string) error {
 	return nil
 }
 
-func (il *IntList) Get() interface{} { return []int(*il) }
+func (il *intListValue) Get() interface{} { return []int(*il) }
 
-func (il *IntList) String() string { return fmt.Sprint(*il) }
+func (il *intListValue) String() string { return fmt.Sprint(*il) }
 
-// String type represents a string value and implements Value interface
-type String string
+// stringValue type represents a string value and implements Value interface
+type stringValue string
 
-func NewString(p *string) *String {
-	return (*String)(p)
+func newStringValue(p *string) *stringValue {
+	return (*stringValue)(p)
 }
 
-func (s *String) Set(values ...string) error {
+func (s *stringValue) Set(values ...string) error {
 	if len(values) == 0 {
 		return nil
 	}
-	*s = String(values[0])
+	*s = stringValue(values[0])
 	return nil
 }
 
-func (s *String) Get() interface{} { return string(*s) }
+func (s *stringValue) Get() interface{} { return string(*s) }
 
-func (s *String) String() string { return fmt.Sprint(*s) }
+func (s *stringValue) String() string { return fmt.Sprint(*s) }
 
-// StringList type represents a list string value and implements Value interface
-type StringList []string
+// stringListValue type represents a list string value and implements Value interface
+type stringListValue []string
 
-func NewStringList(p *[]string) *StringList {
-	return (*StringList)(p)
+func newStringListValue(p *[]string) *stringListValue {
+	return (*stringListValue)(p)
 }
 
-func (sl *StringList) Set(values ...string) error {
+func (sl *stringListValue) Set(values ...string) error {
 	*sl = make([]string, len(values))
 	for i, val := range values {
 		(*sl)[i] = val
@@ -182,18 +182,18 @@ func (sl *StringList) Set(values ...string) error {
 	return nil
 }
 
-func (sl *StringList) Get() interface{} { return []string(*sl) }
+func (sl *stringListValue) Get() interface{} { return []string(*sl) }
 
-func (sl *StringList) String() string { return fmt.Sprint(*sl) }
+func (sl *stringListValue) String() string { return fmt.Sprint(*sl) }
 
-// Float64 represents a float64 value and also implements Value interface
-type Float64 float64
+// float64Value represents a float64 value and also implements Value interface
+type float64Value float64
 
-func NewFloat64(p *float64) *Float64 {
-	return (*Float64)(p)
+func newFloat64Value(p *float64) *float64Value {
+	return (*float64Value)(p)
 }
 
-func (f *Float64) Set(values ...string) error {
+func (f *float64Value) Set(values ...string) error {
 	if len(values) == 0 {
 		return nil
 	}
@@ -201,22 +201,22 @@ func (f *Float64) Set(values ...string) error {
 	if err != nil {
 		return formatParseError(values[0], fmt.Sprintf("%T", float64(1)), err)
 	}
-	*f = Float64(v)
+	*f = float64Value(v)
 	return nil
 }
 
-func (f *Float64) Get() interface{} { return float64(*f) }
+func (f *float64Value) Get() interface{} { return float64(*f) }
 
-func (f *Float64) String() string { return strconv.FormatFloat(float64(*f), 'g', -1, 64) }
+func (f *float64Value) String() string { return strconv.FormatFloat(float64(*f), 'g', -1, 64) }
 
-// Float64List type representing a list of float64 values and implements Value interface
-type Float64List []float64
+// float64ListValue type representing a list of float64 values and implements Value interface
+type float64ListValue []float64
 
-func NewFloat64List(p *[]float64) *Float64List {
-	return (*Float64List)(p)
+func newFloat64ListValue(p *[]float64) *float64ListValue {
+	return (*float64ListValue)(p)
 }
 
-func (fl *Float64List) Set(values ...string) error {
+func (fl *float64ListValue) Set(values ...string) error {
 	*fl = make([]float64, len(values))
 
 	for i, val := range values {
@@ -229,6 +229,6 @@ func (fl *Float64List) Set(values ...string) error {
 	return nil
 }
 
-func (fl *Float64List) Get() interface{} { return []float64(*fl) }
+func (fl *float64ListValue) Get() interface{} { return []float64(*fl) }
 
-func (fl *Float64List) String() string { return fmt.Sprint(*fl) }
+func (fl *float64ListValue) String() string { return fmt.Sprint(*fl) }

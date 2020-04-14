@@ -8,15 +8,18 @@ import (
 )
 
 const (
-	kvPairSep rune   = ','
 	kvSep     rune   = '='
-	posKey    string = "positional"
+	kvPairSep        = ','
+	nameKey   string = "name"
+	usageKey         = "usage"
+	nargsKey         = "nargs"
+	posKey           = "positional"
 )
 
 var validKVs = map[string]*regexp.Regexp{
-	"name":  regexp.MustCompile(fmt.Sprintf(`^name%c([[:alnum:]-]+)$`, kvSep)),
-	"help":  regexp.MustCompile(fmt.Sprintf(`^help%c(.+)$`, kvSep)),
-	"nargs": regexp.MustCompile(fmt.Sprintf(`^nargs%c(-?[[:digit:]]+)$`, kvSep)),
+	usageKey: regexp.MustCompile(fmt.Sprintf(`^%s%c(.+)$`, usageKey, kvSep)),
+	nameKey:  regexp.MustCompile(fmt.Sprintf(`^%s%c([[:alnum:]-]+)$`, nameKey, kvSep)),
+	nargsKey: regexp.MustCompile(fmt.Sprintf(`^%s%c(-?[[:digit:]]+)$`, nargsKey, kvSep)),
 }
 
 func splitKVs(src string, sep rune) []string {
@@ -70,21 +73,21 @@ func parseKVs(structTag string) (map[string]string, error) {
 }
 
 func newFlagFromKVs(value Value, kvs map[string]string) (*Flag, error) {
-	var newFlag *Flag
+	var fl *Flag
 	if kvs[posKey] == "yes" {
-		newFlag = NewPosFlag(value, kvs["help"])
+		fl = NewFlag(value, true, kvs[usageKey])
 	} else {
-		newFlag = NewOptFlag(value, kvs["help"])
+		fl = NewFlag(value, false, kvs[usageKey])
 	}
-	if kvs["nargs"] != "" {
-		nargs, err := strconv.ParseInt(kvs["nargs"], 0, strconv.IntSize)
+	if kvs[nargsKey] != "" {
+		nargs, err := strconv.ParseInt(kvs[nargsKey], 0, strconv.IntSize)
 		if err != nil {
-			return nil, formatParseError(kvs["nargs"], fmt.Sprintf("%T", int(1)), err)
+			return nil, formatParseError(kvs[nargsKey], fmt.Sprintf("%T", int(1)), err)
 		}
-		err = newFlag.SetNArgs(int(nargs))
+		err = fl.SetNArgs(int(nargs))
 		if err != nil {
 			return nil, err
 		}
 	}
-	return newFlag, nil
+	return fl, nil
 }

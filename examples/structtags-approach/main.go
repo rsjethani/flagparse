@@ -8,11 +8,11 @@ import (
 
 func main() {
 	config := struct {
-		Salute   string  `flagparse:"help=Salutation for the employee"`
-		Salary   float64 `flagparse:"positional,help=Employee salary"`
-		FullName string  `flagparse:"positional,help=Full name of the employee"`
-		EmpID    []int   `flagparse:"name=emp-id,help=Employee ID for new employee,nargs=3"`
-		Intern   bool    `flagparse:"help=Is the new employee an intern,nargs=0"`
+		Salute   string  `flagparse:"usage=Salutation for the employee"`
+		Salary   float64 `flagparse:"positional,usage=Employee salary"`
+		FullName string  `flagparse:"positional,usage=Full name of the employee"`
+		EmpID    []int   `flagparse:"name=emp-id,usage=Employee ID for new employee,nargs=3"`
+		Intern   bool    `flagparse:"usage=Is the new employee an intern,nargs=0"`
 	}{
 		EmpID:  []int{100},
 		Salute: "Mr.",

@@ -13,7 +13,7 @@ const (
 	statePosFlag
 	stateOptFlag
 	defaultOptPrefix string = "--"
-	helpOptFlag      string = "--help"
+	helpFlag         string = "--help"
 	packageTag       string = "flagparse"
 )
 
@@ -91,14 +91,14 @@ func NewFlagSetFrom(src interface{}) (*FlagSet, error) {
 		}
 
 		// if 'name' key not specified then simply use field's name in lower case
-		if keyValues["name"] == "" {
-			keyValues["name"] = strings.ToLower(fieldType.Name)
+		if keyValues[nameKey] == "" {
+			keyValues[nameKey] = strings.ToLower(fieldType.Name)
 		}
 
 		if !fieldVal.Addr().CanInterface() {
 			return nil, fmt.Errorf("Error while creating flag from field '%s': %s", fieldType.Name, "unexported struct field")
 		}
-		val, err := NewValue(fieldVal.Addr().Interface())
+		val, err := newValue(fieldVal.Addr().Interface())
 		if err != nil {
 			return nil, fmt.Errorf("Error while creating flag from field '%s': %s", fieldType.Name, err)
 		}
@@ -134,17 +134,17 @@ func (fs *FlagSet) defaultUsage() {
 	}
 	fmt.Fprint(out, "\nPositional Arguments:")
 	for _, fl := range fs.posFlags {
-		fmt.Fprintf(out, "\n  %s  %T\n\t%s", fl.name, fl.flag.value.Get(), fl.flag.help)
+		fmt.Fprintf(out, "\n  %s  %T\n\t%s", fl.name, fl.flag.value.Get(), fl.flag.usage)
 	}
 
 	fmt.Fprint(out, "\n\nOptional Arguments:")
-	fmt.Fprintf(out, "\n  %s\n\t%s", helpOptFlag, "Show this help message and exit")
+	fmt.Fprintf(out, "\n  %s\n\t%s", helpFlag, "Show this usage message and exit")
 	for name, fl := range fs.optFlags {
 		if fl.isSwitch() {
-			fmt.Fprintf(out, "\n  %s\n\t%s", name, fl.help)
+			fmt.Fprintf(out, "\n  %s\n\t%s", name, fl.usage)
 			continue
 		}
-		fmt.Fprintf(out, "\n  %s  %T\n\t%s  (Default: %s)", name, fl.value.Get(), fl.help, fl.defVal)
+		fmt.Fprintf(out, "\n  %s  %T\n\t%s  (Default: %s)", name, fl.value.Get(), fl.usage, fl.defVal)
 	}
 
 	fmt.Fprint(out, "\n")
@@ -168,7 +168,7 @@ func (fs *FlagSet) parse() error {
 		curArg := cmdArgs[iArgs]
 		switch curState {
 		case stateInit:
-			if curArg == helpOptFlag {
+			if curArg == helpFlag {
 				return &ErrHelpInvoked{}
 			}
 
