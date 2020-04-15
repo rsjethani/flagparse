@@ -15,23 +15,26 @@ func formatParseError(val string, typeName string, err error) error {
 	return fmt.Errorf("cannot parse '%s' as type '%s': %s", val, typeName, reason)
 }
 
-// The Value interface specifies desired behavior that a type must have in order to be used with
-// this package. Please see the implementation of Bool, Int etc. types in this pacakge as examples.
+// Value interface specifies the desired behavior that a type must have in order to be used for
+// creating flags. Please see the implementation of boolValue, intValue etc. types in this pacakge
+// as examples.
 type Value interface {
-	// Set takes a variable number of arguments and returns error if any of the arguments cannot be
-	// parsed/converted correctly into the underlying type. For 'switch' types Set() will be called
-	// with no arguments. Types that require only a single argument (Int, Float64 etc. for example)
-	// would care only about the 0th argument and ignore the rest. Types that implement some kind of
-	// list/slice/collection (IntList, Float64List for example) would normally want to parse all
-	// given arguments.
+	// Set is called once for each flag with the number of arguments equal to the flag's nargs
+	// value. It returns error if any of the arguments cannot be parsed into the underlying type.
+	// Since the number of arguments is variable each implementation can handle these arguments
+	// differently. As a general guideline types representing some kind of list/collection for e.g.
+	// []int would iterate over all the given arguments whereas types representing single value for
+	// e.g int, uint etc. would only care about the first argument. Types represnting a switch
+	// (nargs=0), would not be passed any arguments. Hence they should take appropriate action
+	// without any arguments being passed to them. For e.g. the boolValue type in this package
+	// simply sets the underlying bool variable to true when Set() is called on it.
 	Set(...string) error
 
-	// Get should return the value of underlying variable. The returned value's type should be the
-	// same as underlying type
+	// Get simply returns the value of underlying variable.
 	Get() interface{}
 
-	// String returns the current value of underlying variable as a string. This is useful for showing
-	// default values in the help message.
+	// String returns the string representation of the underlying value. This is useful for
+	// showing default values in the usage message.
 	String() string
 }
 
@@ -62,7 +65,7 @@ func newValue(v interface{}) (Value, error) {
 	}
 }
 
-// boolValue type represents a bool value and also implements Value interface
+// boolValue wraps the built-in bool type and implements the Value interface
 type boolValue bool
 
 func newBoolValue(p *bool) *boolValue {
@@ -70,8 +73,9 @@ func newBoolValue(p *bool) *boolValue {
 }
 
 func (b *boolValue) Set(values ...string) error {
+	// allow boolValue to be used as a switch flag: set underlying variable to true when Set()
+	// called without arguments
 	if len(values) == 0 {
-		// since Bool is a switch type calling Set() without args should set it to true
 		values = append(values, "true")
 	}
 	v, err := strconv.ParseBool(values[0])
@@ -86,7 +90,7 @@ func (b *boolValue) Get() interface{} { return bool(*b) }
 
 func (b *boolValue) String() string { return fmt.Sprint(*b) }
 
-// boolListValue type represents a bool value and also implements Value interface
+// boolListValue wraps the built-in []bool type and implements the Value interface
 type boolListValue []bool
 
 func newBoolListValue(p *[]bool) *boolListValue {
@@ -110,7 +114,45 @@ func (bl *boolListValue) Get() interface{} { return []bool(*bl) }
 
 func (bl *boolListValue) String() string { return fmt.Sprint(*bl) }
 
-// intValue type represents an int value
+// stringValue wraps the built-in string type and implements the Value interface
+type stringValue string
+
+func newStringValue(p *string) *stringValue {
+	return (*stringValue)(p)
+}
+
+func (s *stringValue) Set(values ...string) error {
+	if len(values) == 0 {
+		return nil
+	}
+	*s = stringValue(values[0])
+	return nil
+}
+
+func (s *stringValue) Get() interface{} { return string(*s) }
+
+func (s *stringValue) String() string { return fmt.Sprint(*s) }
+
+// stringListValue wraps the built-in []string type and implements the Value interface
+type stringListValue []string
+
+func newStringListValue(p *[]string) *stringListValue {
+	return (*stringListValue)(p)
+}
+
+func (sl *stringListValue) Set(values ...string) error {
+	*sl = make([]string, len(values))
+	for i, val := range values {
+		(*sl)[i] = val
+	}
+	return nil
+}
+
+func (sl *stringListValue) Get() interface{} { return []string(*sl) }
+
+func (sl *stringListValue) String() string { return fmt.Sprint(*sl) }
+
+// intValue wraps the built-in int type and implements the Value interface
 type intValue int
 
 func newIntValue(p *int) *intValue {
@@ -135,7 +177,7 @@ func (i *intValue) Get() interface{} { return int(*i) }
 
 func (i *intValue) String() string { return strconv.Itoa(int(*i)) }
 
-// intListValue type representing a list of integer values
+// intListValue wraps the built-in []int type and implements the Value interface
 type intListValue []int
 
 func newIntListValue(p *[]int) *intListValue {
@@ -158,45 +200,7 @@ func (il *intListValue) Get() interface{} { return []int(*il) }
 
 func (il *intListValue) String() string { return fmt.Sprint(*il) }
 
-// stringValue type represents a string value and implements Value interface
-type stringValue string
-
-func newStringValue(p *string) *stringValue {
-	return (*stringValue)(p)
-}
-
-func (s *stringValue) Set(values ...string) error {
-	if len(values) == 0 {
-		return nil
-	}
-	*s = stringValue(values[0])
-	return nil
-}
-
-func (s *stringValue) Get() interface{} { return string(*s) }
-
-func (s *stringValue) String() string { return fmt.Sprint(*s) }
-
-// stringListValue type represents a list string value and implements Value interface
-type stringListValue []string
-
-func newStringListValue(p *[]string) *stringListValue {
-	return (*stringListValue)(p)
-}
-
-func (sl *stringListValue) Set(values ...string) error {
-	*sl = make([]string, len(values))
-	for i, val := range values {
-		(*sl)[i] = val
-	}
-	return nil
-}
-
-func (sl *stringListValue) Get() interface{} { return []string(*sl) }
-
-func (sl *stringListValue) String() string { return fmt.Sprint(*sl) }
-
-// float64Value represents a float64 value and also implements Value interface
+// float64Value wraps the built-in float64 type and implements the Value interface
 type float64Value float64
 
 func newFloat64Value(p *float64) *float64Value {
@@ -219,7 +223,7 @@ func (f *float64Value) Get() interface{} { return float64(*f) }
 
 func (f *float64Value) String() string { return strconv.FormatFloat(float64(*f), 'g', -1, 64) }
 
-// float64ListValue type representing a list of float64 values and implements Value interface
+// float64ListValue wraps the built-in []float64 type and implements the Value interface
 type float64ListValue []float64
 
 func newFloat64ListValue(p *[]float64) *float64ListValue {
