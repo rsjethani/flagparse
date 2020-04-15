@@ -5,6 +5,16 @@ import (
 	"strconv"
 )
 
+func formatParseError(val string, typeName string, err error) error {
+	var reason string
+	if ne, ok := err.(*strconv.NumError); ok {
+		reason = ne.Err.Error()
+	} else {
+		reason = err.Error()
+	}
+	return fmt.Errorf("cannot parse '%s' as type '%s': %s", val, typeName, reason)
+}
+
 // The Value interface specifies desired behavior that a type must have in order to be used with
 // this package. Please see the implementation of Bool, Int etc. types in this pacakge as examples.
 type Value interface {
