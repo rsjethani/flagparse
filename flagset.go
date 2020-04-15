@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 )
 
@@ -130,21 +131,33 @@ func (fs *FlagSet) defaultUsage() {
 	if fs.Desc != "" {
 		fmt.Fprintf(out, "\n%s\n", fs.Desc)
 	}
-	fmt.Fprint(out, "\nPositional Arguments:")
+	fmt.Fprint(out, "\nPositional Flags:")
 	for _, fl := range fs.posFlags {
 		fmt.Fprintf(out, "\n  %s  %T\n\t%s", fl.name, fl.flag.value.Get(), fl.flag.usage)
 	}
 
-	fmt.Fprint(out, "\n\nOptional Arguments:")
-	fmt.Fprintf(out, "\n  %s\n\t%s", helpFlag, "Show this usage message and exit")
+	type optWithName struct {
+		name string
+		fl   *Flag
+	}
+	var optList []optWithName
 	for name, fl := range fs.optFlags {
-		if fl.isSwitch() {
-			fmt.Fprintf(out, "\n  %s\n\t%s", name, fl.usage)
+		optList = append(optList, struct {
+			name string
+			fl   *Flag
+		}{name, fl})
+	}
+	sort.SliceStable(optList, func(i, j int) bool { return optList[i].name < optList[j].name })
+
+	fmt.Fprint(out, "\n\nOptional Flags:")
+	fmt.Fprintf(out, "\n  %s\n\t%s", helpFlag, "Show this usage message and exit")
+	for _, v := range optList {
+		if v.fl.isSwitch() {
+			fmt.Fprintf(out, "\n  %s\n\t%s", v.name, v.fl.usage)
 			continue
 		}
-		fmt.Fprintf(out, "\n  %s  %T\n\t%s  (Default: %s)", name, fl.value.Get(), fl.usage, fl.defVal)
+		fmt.Fprintf(out, "\n  %s  %T\n\t%s  (Default: %s)", v.name, v.fl.value.Get(), v.fl.usage, v.fl.defVal)
 	}
-
 	fmt.Fprint(out, "\n")
 }
 
