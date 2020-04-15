@@ -81,7 +81,8 @@ func NewFlagSetFrom(src interface{}) (*FlagSet, error) {
 		fieldType := srcTyp.Field(i)
 		fieldVal := srcVal.Field(i)
 		structTags, tagged := srcTyp.Field(i).Tag.Lookup(packageTag)
-		if !tagged {
+		// ignore fields which are untagged and/or unexported
+		if !tagged || !fieldVal.Addr().CanInterface() {
 			continue
 		}
 
@@ -95,9 +96,6 @@ func NewFlagSetFrom(src interface{}) (*FlagSet, error) {
 			keyValues[nameKey] = strings.ToLower(fieldType.Name)
 		}
 
-		if !fieldVal.Addr().CanInterface() {
-			return nil, fmt.Errorf("Error while creating flag from field '%s': %s", fieldType.Name, "unexported struct field")
-		}
 		val, err := newValue(fieldVal.Addr().Interface())
 		if err != nil {
 			return nil, fmt.Errorf("Error while creating flag from field '%s': %s", fieldType.Name, err)

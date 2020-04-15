@@ -54,7 +54,11 @@ func Example_structTagApproach() {
 		Opt2 []string  `flagparse:"usage=opt2 usage,nargs=2"`
 		Sw1  bool      `flagparse:"usage=sw1 usage,nargs=0"`
 	}{Opt1: -1}
-	fs, _ := flagparse.NewFlagSetFrom(&cfg)
+	fs, err := flagparse.NewFlagSetFrom(&cfg)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Printf("\nBefore parsing: %+v", cfg)
 	fs.CmdArgs = []string{"11", "1.1", "2.2", "--opt1-name", "22", "--opt2", "hello", "world", "--sw1"}
 	fs.Parse()
