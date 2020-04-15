@@ -56,7 +56,7 @@ func Test_Add_FlagToFlagSet(t *testing.T) {
 	}
 }
 
-func Test_NewArgSetFrom_InvalidInputs(t *testing.T) {
+func Test_NewFlagSetFrom_InvalidInputs(t *testing.T) {
 	data := []interface{}{
 		// Test nil as input
 		nil,
@@ -64,10 +64,6 @@ func Test_NewArgSetFrom_InvalidInputs(t *testing.T) {
 		*new(bool),
 		// Test pointer to a non-struct as input
 		new(bool),
-		// Test unexported tagged field as input
-		&struct {
-			field1 int `flagparse:""`
-		}{},
 		// Test unsupported field type as input
 		&struct {
 			Field1 int8 `flagparse:""`
@@ -88,12 +84,13 @@ func Test_NewArgSetFrom_InvalidInputs(t *testing.T) {
 	}
 }
 
-func Test_NewArgSetFrom_ValidInputs(t *testing.T) {
+func Test_NewFlagSetFrom_ValidInputs(t *testing.T) {
 	args := struct {
 		Field0 int // should get ignored
-		Field1 int `flagparse:""`           // expected an optional flag
-		Field2 int `flagparse:"positional"` // expected a positional flag
-	}{Field0: 11, Field1: 22, Field2: 33}
+		field1 int `flagparse:""`           // should get ignored
+		Field2 int `flagparse:""`           // expected an optional flag
+		Field3 int `flagparse:"positional"` // expected a positional flag
+	}{Field0: 11, field1: -1, Field2: 22, Field3: 33}
 
 	flagSet, err := NewFlagSetFrom(&args)
 	if err != nil {
