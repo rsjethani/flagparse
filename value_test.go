@@ -119,10 +119,8 @@ func TestBoolListType(t *testing.T) {
 		t.Errorf("Expected: no error, Got: error '%s' for input \"%s\"", err, data.input)
 	}
 	// check whether each value in expected is same as set in testVar
-	for i, _ := range data.expected {
-		if data.expected[i] != testVar[i] {
-			t.Errorf("Expected: %v, Got: %v", data.expected[i], testVar[i])
-		}
+	if !reflect.DeepEqual(data.expected, testVar) {
+		t.Errorf("Expected: %v, Got: %v", data.expected, testVar)
 	}
 	if !reflect.DeepEqual(testVal.Get(), testVar) {
 		t.Errorf("Expected: Get() should return the value %v; Got: %v", testVar, testVal.Get())
@@ -185,10 +183,8 @@ func TestStringListType(t *testing.T) {
 		t.Errorf("Expected: no error, Got: error '%s' for input \"%s\"", err, data.input)
 	}
 	// check whether each value in expected is same as set in testVar
-	for i, _ := range data.expected {
-		if data.expected[i] != testVar[i] {
-			t.Errorf("Expected: %v, Got: %v", data.expected[i], testVar[i])
-		}
+	if !reflect.DeepEqual(data.expected, testVar) {
+		t.Errorf("Expected: %v, Got: %v", data.expected, testVar)
 	}
 	if !reflect.DeepEqual(testVal.Get(), testVar) {
 		t.Errorf("Expected: Get() should return the value %v; Got: %v", testVar, testVal.Get())
@@ -255,10 +251,8 @@ func TestIntListType(t *testing.T) {
 		t.Errorf("Expected: no error, Got: error '%s' for input \"%s\"", err, data.input)
 	}
 	// check whether each value in expected is same as set in testVar
-	for i, _ := range data.expected {
-		if data.expected[i] != testVar[i] {
-			t.Errorf("Expected: %v, Got: %v", data.expected[i], testVar[i])
-		}
+	if !reflect.DeepEqual(data.expected, testVar) {
+		t.Errorf("Expected: %v, Got: %v", data.expected, testVar)
 	}
 	if !reflect.DeepEqual(testVal.Get(), testVar) {
 		t.Errorf("Expected: Get() should return the value %v; Got: %v", testVar, testVal.Get())
@@ -332,10 +326,8 @@ func TestFloat64ListType(t *testing.T) {
 		t.Errorf("Expected: no error, Got: error '%s' for input \"%s\"", err, data.input)
 	}
 	// check whether each value in expected is same as set in testVar
-	for i, _ := range data.expected {
-		if data.expected[i] != testVar[i] {
-			t.Errorf("Expected: %v, Got: %v", data.expected[i], testVar[i])
-		}
+	if !reflect.DeepEqual(data.expected, testVar) {
+		t.Errorf("Expected: %v, Got: %v", data.expected, testVar)
 	}
 	if !reflect.DeepEqual(testVal.Get(), testVar) {
 		t.Errorf("Expected: Get() should return the value %v; Got: %v", testVar, testVal.Get())
