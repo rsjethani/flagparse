@@ -17,7 +17,6 @@ const (
 	stateOptFlag
 	kvSep            rune   = '='
 	kvPairSep        rune   = ','
-	infinity         rune   = '∞'
 	optNameSep       string = ":"
 	defaultOptPrefix string = "-"
 	nameKey          string = "name"
@@ -386,15 +385,15 @@ func (fs *FlagSet) defaultUsage() {
 			fmt.Fprintf(out, "\n\n  %s\n\t%s", v.name, v.fl.usage)
 			continue
 		}
-		nargs := fmt.Sprintf("(NArgs: %c)", infinity)
+		nargs := "Requires: 1 or more argument(s)"
 		if v.fl.nArgs > 0 {
-			nargs = fmt.Sprintf("(NArgs: %d)", v.fl.nArgs)
+			nargs = fmt.Sprintf("Requires: %v argument(s)", v.fl.nArgs)
 		}
-		def := `(Default: "")`
+		def := `Default: ""`
 		if v.fl.defVal != "" {
-			def = fmt.Sprintf("(Default: %s)", v.fl.defVal)
+			def = fmt.Sprintf("Default: %s", v.fl.defVal)
 		}
-		fmt.Fprintf(out, "\n\n  %s  %T\n\t%s. %s %s", v.name, v.fl.value.Get(), v.fl.usage, nargs, def)
+		fmt.Fprintf(out, "\n\n  %s  %T\n\t%s. %s. %s", v.name, v.fl.value.Get(), v.fl.usage, nargs, def)
 	}
 	fmt.Fprint(out, "\n")
 }
