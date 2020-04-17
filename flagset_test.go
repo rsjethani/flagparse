@@ -259,11 +259,11 @@ func Test_Parse_ValidInputs(t *testing.T) {
 			},
 		},
 		{
-			args: []string{"20", "1.2", "3.4", "-s", "--opt1", "100", "--opt2", "one", "two", "--opt3", "1.1", "2.2", "3.3"},
+			args: []string{"20", "1.2", "3.4", "-s", "--opt1", "100", "--opt1", "200", "-o", "300", "--opt2", "one", "two", "--opt3", "1.1", "2.2", "3.3"},
 			expected: &testConfig{
 				Pos1: 20,
 				Pos2: []float64{1.2, 3.4},
-				Opt1: 100,
+				Opt1: 300,
 				Opt2: []string{"one", "two"},
 				Opt3: []float64{1.1, 2.2, 3.3},
 				Sw1:  true},
