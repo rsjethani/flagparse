@@ -56,16 +56,22 @@ func Test_FlagSet_Add_Invalid(t *testing.T) {
 	testVar := 100
 	posFlag := NewIntFlag(&testVar, true, "")
 	optFlag := NewIntFlag(&testVar, false, "")
+	fs := NewFlagSet()
+	fs.optFlags[defaultOptPrefix+"opt1"] = optFlag
+	fs.posFlags = append(fs.posFlags, posWithName{"pos1", posFlag})
 	data := []struct {
 		fl       *Flag
 		name     string
 		optNames []string
 	}{
+		// Test adding new positional flag with existing name
+		{fl: posFlag, name: "pos1"},
+		// Test adding new optional flag with existing name
+		{fl: optFlag, name: defaultOptPrefix + "opt1"},
 		{fl: posFlag, name: defaultOptPrefix + "name-with-prefix"},
 		{fl: optFlag, name: "name-without-prefix"},
 		{optFlag, defaultOptPrefix + "name-with-prefix", []string{"opt-name-no-prefix"}},
 	}
-	fs := NewFlagSet()
 	for _, input := range data {
 		if err := fs.Add(input.fl, input.name, input.optNames...); err == nil {
 			t.Errorf("Testing: FlagSet.Add(%p,%q,%q); Expected: error; Got: nil", input.fl,
