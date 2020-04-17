@@ -125,6 +125,12 @@ func (fs *FlagSet) Add(fl *Flag, name string, optNames ...string) error {
 		if !validPosName(name) {
 			return fmt.Errorf("%q is not a valid positional flag name", name)
 		}
+		// check for duplicate name
+		for _, v := range fs.posFlags {
+			if name == v.name {
+				return fmt.Errorf("positional flag with name %q already exists", name)
+			}
+		}
 		fs.posFlags = append(fs.posFlags, posWithName{name, fl})
 	} else {
 		names := []string{name}
@@ -132,6 +138,12 @@ func (fs *FlagSet) Add(fl *Flag, name string, optNames ...string) error {
 		for _, nm := range names {
 			if !validOptName(nm) {
 				return fmt.Errorf("%q is not a valid optional flag name", nm)
+			}
+			// check for duplicate name
+			for v := range fs.optFlags {
+				if nm == v {
+					return fmt.Errorf("optional flag with name %q already exists", nm)
+				}
 			}
 			fs.optFlags[nm] = fl
 		}
