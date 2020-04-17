@@ -234,9 +234,9 @@ func (fs *FlagSet) addFlagFromTag(value Value, tagValue string, fieldName string
 
 func (fs *FlagSet) parse() error {
 	cmdArgs := fs.CmdArgs
-	visited := make(map[string]bool)
 
-	for iArgs, iPos, curState := 0, 0, stateInit; iArgs < len(cmdArgs); {
+	var iPos int
+	for iArgs, curState := 0, stateInit; iArgs < len(cmdArgs); {
 		curArg := cmdArgs[iArgs]
 		switch curState {
 		case stateInit:
@@ -246,27 +246,20 @@ func (fs *FlagSet) parse() error {
 
 			// if curArg starts with the configured prefix then process it as an optional arg
 			if strings.HasPrefix(curArg, defaultOptPrefix) {
-				if _, found := fs.optFlags[curArg]; found {
-					if visited[curArg] { // if defined but already processed then return error
-						return fmt.Errorf("flag '%s' already given", curArg)
-					}
-					curState = stateOptFlag
-					break
-				} else { // if not defined as an opt arg then return error
+				if _, found := fs.optFlags[curArg]; !found {
 					return fmt.Errorf("unknown optional flag: %s", curArg)
 				}
-			}
+				curState = stateOptFlag
 
-			// if all positional flags have not been processed yet then consider
-			// curArg as the value for next positional arg
-			if iPos < len(fs.posFlags) {
+			} else if iPos < len(fs.posFlags) {
+				// if all positional flags have not been processed yet then consider
+				// curArg as the value for next positional arg
 				curState = statePosFlag
-				break
+			} else {
+				// since all defined positional and optional args have been processed, curArg
+				// is an undefined positional flag
+				return fmt.Errorf("no positional flag remaining to take argument %q", curArg)
 			}
-
-			// since all defined positional and optional args have been processed, curArg
-			// is an undefined positional flag
-			return fmt.Errorf("Unknown positional flag: %s", curArg)
 		case statePosFlag:
 			name := fs.posFlags[iPos].name
 			val := fs.posFlags[iPos].flag.value
@@ -287,7 +280,6 @@ func (fs *FlagSet) parse() error {
 				iArgs += nargs
 			}
 			iPos++
-			visited[name] = true
 			curState = stateInit
 		case stateOptFlag:
 			name := curArg
@@ -314,14 +306,11 @@ func (fs *FlagSet) parse() error {
 				val.Set()
 				iArgs++
 			}
-			visited[name] = true
 			curState = stateInit
 		}
 	}
-	for _, pos := range fs.posFlags {
-		if !visited[pos.name] {
-			return fmt.Errorf("Error: value for positional flag '%s' not given", pos.name)
-		}
+	if iPos < len(fs.posFlags) {
+		return fmt.Errorf("Error: value for positional flag '%s' not given", fs.posFlags[iPos].name)
 	}
 	return nil
 }
