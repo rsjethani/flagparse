@@ -70,6 +70,8 @@ func Test_FlagSet_Add_Invalid(t *testing.T) {
 		{fl: optFlag, name: defaultOptPrefix + "opt1"},
 		{fl: posFlag, name: defaultOptPrefix + "name-with-prefix"},
 		{fl: optFlag, name: "name-without-prefix"},
+		{fl: optFlag, name: helpLong},
+		{fl: optFlag, name: helpShort},
 		{optFlag, defaultOptPrefix + "name-with-prefix", []string{"opt-name-no-prefix"}},
 	}
 	for _, input := range data {
@@ -332,7 +334,7 @@ func Test_Parse_HelpOption(t *testing.T) {
 	fs.ContinueOnError = true
 	f, _ := os.Create(os.DevNull)
 	fs.SetOutput(f)
-	fs.CmdArgs = []string{helpFlag}
+	fs.CmdArgs = []string{helpLong}
 	err := fs.Parse()
 	if err == nil {
 		t.Errorf("Testing: FlagSet.Parse(); Expected: error with %q args; Got: no error", fs.CmdArgs)
@@ -358,7 +360,7 @@ func Test_Parse_ExitOnError(t *testing.T) {
 		arg      string
 		expected int
 	}{
-		{helpFlag, 1},
+		{helpLong, 1},
 		{"dummy-flag", 2},
 	}
 	for _, input := range data {

@@ -23,7 +23,8 @@ const (
 	nameKey          string = "name"
 	usageKey         string = "usage"
 	nargsKey         string = "nargs"
-	helpFlag         string = "--help"
+	helpShort        string = "-h"
+	helpLong         string = "--help"
 	packageTag       string = "flagparse"
 )
 
@@ -137,6 +138,9 @@ func (fs *FlagSet) Add(fl *Flag, name string, optNames ...string) error {
 		names := []string{name}
 		names = append(names, optNames...)
 		for _, nm := range names {
+			if nm == helpShort || nm == helpLong {
+				return fmt.Errorf("flag names %s,%s are reserved", helpShort, helpLong)
+			}
 			if !validOptName(nm) {
 				return fmt.Errorf("%q is not a valid optional flag name", nm)
 			}
@@ -241,7 +245,7 @@ func (fs *FlagSet) parse() error {
 		curArg := cmdArgs[iArgs]
 		switch curState {
 		case stateInit:
-			if curArg == helpFlag {
+			if curArg == helpShort || curArg == helpLong {
 				return &ErrHelpInvoked{}
 			}
 
@@ -376,7 +380,7 @@ func (fs *FlagSet) defaultUsage() {
 	}
 
 	fmt.Fprint(out, "\n\nOptional Flags:")
-	fmt.Fprintf(out, "\n  %s\n\t%s", helpFlag, "Show this usage message and exit")
+	fmt.Fprintf(out, "\n  %s, %s\n\t%s", helpShort, helpLong, "Show this usage message and exit")
 	for _, v := range fs.optMapToList() {
 		if v.fl.isSwitch() {
 			fmt.Fprintf(out, "\n\n  %s\n\t%s", v.name, v.fl.usage)
