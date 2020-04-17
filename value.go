@@ -16,7 +16,7 @@ func formatParseError(val string, typeName string, err error) error {
 }
 
 // Value interface specifies the desired behavior that a type must have in order to be used for
-// creating flags. Please see the implementation of boolValue, intValue etc. types in this pacakge
+// creating flags. Please see the implementation of boolValue, intValue etc. types in this package
 // as examples.
 type Value interface {
 	// Set is called once for each flag with the number of arguments equal to the flag's nargs
