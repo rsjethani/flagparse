@@ -17,6 +17,7 @@ const (
 	stateOptFlag
 	kvSep            rune   = '='
 	kvPairSep        rune   = ','
+	infinity         rune   = '∞'
 	optNameSep       string = ":"
 	defaultOptPrefix string = "-"
 	nameKey          string = "name"
@@ -371,17 +372,25 @@ func (fs *FlagSet) defaultUsage() {
 	}
 	fmt.Fprint(out, "\nPositional Flags:")
 	for _, fl := range fs.posFlags {
-		fmt.Fprintf(out, "\n  %s  %T\n\t%s", fl.name, fl.flag.value.Get(), fl.flag.usage)
+		fmt.Fprintf(out, "\n\n  %s  %T\n\t%s", fl.name, fl.flag.value.Get(), fl.flag.usage)
 	}
 
 	fmt.Fprint(out, "\n\nOptional Flags:")
 	fmt.Fprintf(out, "\n  %s\n\t%s", helpFlag, "Show this usage message and exit")
 	for _, v := range fs.optMapToList() {
 		if v.fl.isSwitch() {
-			fmt.Fprintf(out, "\n  %s\n\t%s", v.name, v.fl.usage)
+			fmt.Fprintf(out, "\n\n  %s\n\t%s", v.name, v.fl.usage)
 			continue
 		}
-		fmt.Fprintf(out, "\n  %s  %T\n\t%s  (Default: %s)", v.name, v.fl.value.Get(), v.fl.usage, v.fl.defVal)
+		nargs := fmt.Sprintf("(NArgs: %c)", infinity)
+		if v.fl.nArgs > 0 {
+			nargs = fmt.Sprintf("(NArgs: %d)", v.fl.nArgs)
+		}
+		def := `(Default: "")`
+		if v.fl.defVal != "" {
+			def = fmt.Sprintf("(Default: %s)", v.fl.defVal)
+		}
+		fmt.Fprintf(out, "\n\n  %s  %T\n\t%s. %s %s", v.name, v.fl.value.Get(), v.fl.usage, nargs, def)
 	}
 	fmt.Fprint(out, "\n")
 }
