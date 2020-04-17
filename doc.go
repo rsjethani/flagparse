@@ -42,15 +42,12 @@ back-slashes, see examples below. Following are the valid keys:
 ``name''
 
 Specifies the name to use for the flag. The value can be a sequence of upper/lower case
-alpha-numeric characters and a``-''. If omitted, the field's name in lower-case is used as value.
-You don't have to prefix the value with ``--'' when creating an optional flag, the will be done
-automatically. More precisely the value of FlagSet.OptPrefix is used as the prefix, ``--'' being
-the default.
-
-``positional''
-
-By default an optional flag is created from the struct field but if this key is given then a
-positional flag is created. This key does not take any value.
+alpha-numeric characters and a``-''. The name decides whether the flag is going to be positional or
+optional. If the name starts with the prefix ``-'' then the flag will be optional otherwise it will
+be a positional flag. For optional flags you can specify two prefix characters like ``--'' so as to
+create ``--long-option-name''. Also for optional flags you can give ``:'' separated list of
+secondary names. For positional flag these secondary names will be ignored. If the name key is
+omitted, then by default a positional flag is created using field's name in lower-case.
 
 ``usage''
 
@@ -75,23 +72,23 @@ the flag doesn't require any arguments i.e. it is essentially a switch.
 Some examples:
 
 	type <struct name> struct {
-		// an optional flag with name="field1",nargs="1",usage=""
+		// a positional flag with name="field1",nargs="1",usage=""
 		Field1  int  `flagparse:""`
 
-		// an optional flag with name="--loc-data",nargs="3",usage="hello, world!"
+		// a positional flag with name="loc-data",nargs="3",usage="hello, world!"
 		Field2  []int  `flagparse:"name=loc-data,nargs=3,usage=hello\\, world!"`
 
-		// a positional flag with name="field2",nargs="1",usage=""
-		Field3  int  `flagparse:"positional"`
+		// an optional flag with names "--field3" and "-f" ,nargs="5",usage=""
+		Field3  int  `flagparse:"name=--field3:-f,nargs=5"`
 
-		// a positional flag with name="f4" and unlimited arguments
-		Field4  []int  `flagparse:"positional,name=f4,nargs=-1"`
+		// an optional flag with name="-A" and unlimited arguments
+		Field4  []int  `flagparse:"name=-A,nargs=-1"`
 
 		// Error: nargs cannot be 0 for a positional flag
-		Field5  int  `flagparse:"positional,nargs=0"`
+		Field5  int  `flagparse:"nargs=0"`
 
 		// a switch flag with name="--f6"
-		Field6  int  `flagparse:"name=f6,nargs=0"`
+		Field6  int  `flagparse:"name=--f6,nargs=0"`
 	}
 
 

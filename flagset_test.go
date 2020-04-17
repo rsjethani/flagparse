@@ -1,58 +1,127 @@
 package flagparse
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"reflect"
 	"testing"
 )
 
+func Test_FlagSet_addFlagFromTag_InvalidInput(t *testing.T) {
+	fs := NewFlagSet()
+	testValue := newIntValue(new(int))
+	data := []string{
+		"hello=hi",
+		"nargs=99999999999999999999999",
+		"name=pos-flag,nargs=0",
+		"name=--opt:no-prefix",
+	}
+	for _, input := range data {
+		if err := fs.addFlagFromTag(testValue, input, ""); err == nil {
+			t.Errorf("Testing: addFlagFromTag(%q); expected: error; got: no error", input)
+		}
+	}
+}
+
+func Test_FlagSet_addFlagFromTag_ValidInput(t *testing.T) {
+	testValue := newIntValue(new(int))
+	data := []string{
+		"",
+		"name=pos-name,nargs=10",
+		"name=--opt-name,nargs=10,usage=hello",
+	}
+	for _, input := range data {
+		fs := NewFlagSet()
+		if err := fs.addFlagFromTag(testValue, input, "field-name"); err != nil {
+			t.Errorf("Testing: addFlagFromTag(%q); expected: error; got: no error", input)
+		}
+	}
+}
+
 func Test_NewFlagSet(t *testing.T) {
 	flagSet := NewFlagSet()
 	expected := &FlagSet{
-		OptPrefix: defaultOptPrefix,
-		optFlags:  make(map[string]*Flag),
-		usageOut:  os.Stderr,
-		name:      os.Args[0],
-		CmdArgs:   os.Args[1:],
+		optFlags: make(map[string]*Flag),
+		usageOut: os.Stderr,
+		name:     os.Args[0],
+		CmdArgs:  os.Args[1:],
 	}
 	if !reflect.DeepEqual(flagSet, expected) {
 		t.Errorf("Testing: NewFlagSet(); Expected: %#v; Got: %#v", expected, flagSet)
 	}
 }
 
-func Test_Add_FlagToFlagSet(t *testing.T) {
-	expected := NewFlagSet()
-
+func Test_FlagSet_Add_Invalid(t *testing.T) {
+	testVar := 100
+	posFlag := NewIntFlag(&testVar, true, "")
+	optFlag := NewIntFlag(&testVar, false, "")
+	data := []struct {
+		fl       *Flag
+		name     string
+		optNames []string
+	}{
+		{fl: posFlag, name: defaultOptPrefix + "name-with-prefix"},
+		{fl: optFlag, name: "name-without-prefix"},
+		{optFlag, defaultOptPrefix + "name-with-prefix", []string{"opt-name-no-prefix"}},
+	}
 	fs := NewFlagSet()
-	fs.Add("", nil)
-	if !reflect.DeepEqual(fs, expected) {
-		t.Errorf("Testing: FlagSet.Add(nil); Expected: %+v; Got: %+v", expected, fs)
+	for _, input := range data {
+		if err := fs.Add(input.fl, input.name, input.optNames...); err == nil {
+			t.Errorf("Testing: FlagSet.Add(%p,%q,%q); Expected: error; Got: nil", input.fl,
+				input.name, input.optNames)
+		}
 	}
+}
 
-	posVar := 100
-	posFlag := NewIntFlag(&posVar, true, "")
-	expected.posFlags = append(expected.posFlags, posWithName{"pos1", posFlag})
-	fs.Add("pos1", posFlag)
-	if !reflect.DeepEqual(fs, expected) {
-		t.Errorf("Testing: FlagSet.Add(%+v); Expected: %+v; Got: %+v", posFlag, expected, fs)
+func Test_FlagSet_Add_Valid(t *testing.T) {
+	fs := NewFlagSet()
+	data := []struct {
+		fl       *Flag
+		name     string
+		optNames []string
+		validate func() error
+	}{
+		// Test: passing nil as flag does not affect flagset state
+		{
+			fl: nil,
+			validate: func() error {
+				if len(fs.optFlags) == 0 && len(fs.posFlags) == 0 {
+					return nil
+				}
+				return fmt.Errorf("flag got added to flagset")
+			}},
+		// Test: adding positional flag with valid name
+		{
+			fl:   NewIntFlag(new(int), true, ""),
+			name: "name-without-prefix",
+			validate: func() error {
+				if len(fs.posFlags) == 1 {
+					return nil
+				}
+				return fmt.Errorf("positional flag not added")
+			}},
+		// Test: adding optional flag with valid name and valid extra names
+		{
+			fl:       NewIntFlag(new(int), false, ""),
+			name:     defaultOptPrefix + "name-with-prefix",
+			optNames: []string{defaultOptPrefix + "another-name"},
+			validate: func() error {
+				if len(fs.optFlags) == 2 {
+					return nil
+				}
+				return fmt.Errorf("optional flag not added")
+			}},
 	}
-
-	optVar := 100
-	optFlag := NewIntFlag(&optVar, false, "")
-	expected.optFlags[fs.OptPrefix+"opt1"] = optFlag
-	fs.Add("opt1", optFlag)
-	if !reflect.DeepEqual(fs, expected) {
-		t.Errorf("Testing: FlagSet.Add(%+v); Expected: %+v; Got: %+v", optFlag, expected, fs)
-	}
-
-	swVar := 100
-	swFlag := NewIntFlag(&swVar, false, "")
-	swFlag.SetNArgs(0)
-	expected.optFlags[fs.OptPrefix+"sw1"] = swFlag
-	fs.Add("sw1", swFlag)
-	if !reflect.DeepEqual(fs, expected) {
-		t.Errorf("Testing: FlagSet.Add(%+v); Expected: %+v; Got: %+v", swFlag, expected, fs)
+	for _, input := range data {
+		if err := fs.Add(input.fl, input.name, input.optNames...); err != nil {
+			t.Errorf("Testing: FlagSet.Add(%p,%q,%q); Expected: no error; Got: %s", input.fl,
+				input.name, input.optNames, err)
+		}
+		if err := input.validate(); err != nil {
+			t.Errorf("Testing: FlagSet.Add(%p,%q,%q); Expected: no error; Got: %v", input.fl,
+				input.name, input.optNames, err)
+		}
 	}
 }
 
@@ -68,13 +137,9 @@ func Test_NewFlagSetFrom_InvalidInputs(t *testing.T) {
 		&struct {
 			Field1 int8 `flagparse:""`
 		}{},
-		// Test invalid key/value as input
-		&struct {
-			Field1 int `flagparse:"name=A_B"`
-		}{},
 		// Test error returned from newFlagFromKVs()
 		&struct {
-			Field1 int `flagparse:"positional,nargs=0"`
+			Field1 int `flagparse:"name=A_B"`
 		}{},
 	}
 	for _, input := range data {
@@ -87,10 +152,10 @@ func Test_NewFlagSetFrom_InvalidInputs(t *testing.T) {
 func Test_NewFlagSetFrom_ValidInputs(t *testing.T) {
 	args := struct {
 		Field0 int // should get ignored
-		field1 int `flagparse:""`           // should get ignored
-		Field2 int `flagparse:""`           // expected an optional flag
-		Field3 int `flagparse:"positional"` // expected a positional flag
-	}{Field0: 11, field1: -1, Field2: 22, Field3: 33}
+		field1 int `flagparse:""`              // should get ignored
+		Field2 int `flagparse:""`              // expected a positional flag
+		Field3 int `flagparse:"name=--field3"` // expected an optional flag
+	}{}
 
 	flagSet, err := NewFlagSetFrom(&args)
 	if err != nil {
@@ -118,12 +183,12 @@ func Test_usage_UserDefined(t *testing.T) {
 }
 
 type testConfig struct {
-	Pos1 int       `flagparse:"positional,usage=pos1 usage"`
-	Pos2 []float64 `flagparse:"positional,usage=pos2 usage,nargs=2"`
-	Opt1 int       `flagparse:"usage=opt1 usage"`
-	Opt2 []string  `flagparse:"usage=opt2 usage,nargs=2"`
-	Opt3 []float64 `flagparse:"usage=opt3 usage,nargs=-1"`
-	Sw1  bool      `flagparse:"usage=sw1 usage,nargs=0"`
+	Pos1 int       `flagparse:"usage=pos1 usage"`
+	Pos2 []float64 `flagparse:"usage=pos2 usage,nargs=2"`
+	Opt1 int       `flagparse:"name=--opt1:-o,usage=--opt1 usage"`
+	Opt2 []string  `flagparse:"name=--opt2,usage=--opt2 usage,nargs=2"`
+	Opt3 []float64 `flagparse:"name=--opt3,usage=--opt3 usage,nargs=-1"`
+	Sw1  bool      `flagparse:"name=-s,usage=-s usage,nargs=0"`
 }
 
 func Test_Parse_InvalidInputs(t *testing.T) {
@@ -188,7 +253,7 @@ func Test_Parse_ValidInputs(t *testing.T) {
 			},
 		},
 		{
-			args: []string{"20", "1.2", "3.4", "--sw1", "--opt1", "100", "--opt2", "one", "two", "--opt3", "1.1", "2.2", "3.3"},
+			args: []string{"20", "1.2", "3.4", "-s", "--opt1", "100", "--opt2", "one", "two", "--opt3", "1.1", "2.2", "3.3"},
 			expected: &testConfig{
 				Pos1: 20,
 				Pos2: []float64{1.2, 3.4},
@@ -212,7 +277,7 @@ func Test_Parse_ValidInputs(t *testing.T) {
 
 func Test_Parse_PosFlagWithUnlimitedArgs(t *testing.T) {
 	type testCfg struct {
-		Pos1 []int `flagparse:"positional,nargs=-1"`
+		Pos1 []int `flagparse:"nargs=-1"`
 	}
 	cfg := &testCfg{}
 	fs, err := NewFlagSetFrom(cfg)
@@ -298,6 +363,77 @@ func Test_Parse_ExitOnError(t *testing.T) {
 			if e.ExitCode() != input.expected {
 				t.Errorf("Testing: FlagSet.Parse(); Expected: exit code %d with args %q; Got: exit code %d", input.expected, input.arg, e.ExitCode())
 			}
+		}
+	}
+}
+
+func Test_splitKV(t *testing.T) {
+	data := make(map[string][]string)
+	data[""] = []string{}
+	data[fmt.Sprintf("%[1]c%[1]c%[1]c", kvPairSep)] = []string{}
+	data[fmt.Sprintf("a%[1]cb%[1]cc%[1]cd", kvPairSep)] = []string{"a", "b", "c", "d"}
+	data[fmt.Sprintf("%[1]ca%[1]cb%[1]cc%[1]cd%[1]c", kvPairSep)] = []string{"a", "b", "c", "d"}
+	data[fmt.Sprintf("%[1]ca\\%[1]cb%[1]cc%[1]cd\\%[1]c", kvPairSep)] = []string{fmt.Sprintf("a%cb", kvPairSep), "c", fmt.Sprintf("d%c", kvPairSep)}
+	for input, expected := range data {
+		if got := splitKVs(input, kvPairSep); !reflect.DeepEqual(expected, got) {
+			t.Errorf("Testing: splitKV(%q, %c); Expected: %q; Got: %q", input, kvPairSep, expected, got)
+		}
+	}
+}
+
+func Test_parseKVs_InvalidKeyValues(t *testing.T) {
+	invalidKVs := []string{
+		"hello",
+		"usage=",
+		"hello=hi",
+		"name=flag_name",
+		"name=flag-name:",
+		"name=:flag-name",
+		"nargs=1x",
+	}
+
+	for _, kv := range invalidKVs {
+		if _, err := parseKVs(kv); err == nil {
+			t.Errorf("Testing: parseTags(%q); Expected: error; Got: no error", kv)
+		}
+	}
+}
+
+func Test_parseKVs_ValidKeyValues(t *testing.T) {
+	data := []struct {
+		kvs      string
+		expected map[string]string
+	}{
+		{
+			"",
+			map[string]string{},
+		},
+		{
+			"name=flag-name123,usage=hello\\,world,nargs=10",
+			map[string]string{
+				nargsKey: "10",
+				nameKey:  "flag-name123",
+				usageKey: "hello,world",
+			},
+		},
+		{
+			"name=-f123:--Flag-Name123,usage=abc,nargs=-10",
+			map[string]string{
+				nargsKey: "-10",
+				nameKey:  "-f123:--Flag-Name123",
+				usageKey: "abc",
+			},
+		},
+	}
+
+	for _, input := range data {
+		got, err := parseKVs(input.kvs)
+		if err != nil {
+			t.Errorf("Testing: parseTags(%q); Expected: no error; Got: %s", input.kvs, err)
+		}
+
+		if !reflect.DeepEqual(input.expected, got) {
+			t.Errorf("Testing: parseTags(%q); Expected: %+v; Got: %+v", input.kvs, input.expected, got)
 		}
 	}
 }
