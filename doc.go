@@ -59,10 +59,10 @@ string is used as value.
 Specifies the number of arguments the flag requires. The value can a vaild integer. If omitted, then
 ``1'' is used as value.
 
-A negative integer means unlimited number of arguments. Both optional and positional flags can have
-unlimited arguments with following rules: 1) Only one flag positional or optional can have unlimited
-arguments in a flagset. 2) For positional flags only the last one specified can have unlimited
-arguments.
+A negative integer means unlimited (one or more) number of arguments. Multiple flags positional or
+optional can have unlimited arguments in a flagset. However for positional flags you should specify
+only one flag with unlimited arguments and it should be the last positional flag. This limitation
+will go away in some future release.
 
 The value ``0'' is also a bit special. When specified for a positional flag it results in error
 since positional flag must have at least one argument. For an optional flag specifying ``0'' means

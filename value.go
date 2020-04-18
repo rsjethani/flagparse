@@ -159,8 +159,6 @@ func newIntValue(p *int) *intValue {
 	return (*intValue)(p)
 }
 
-// implement set like Bool does...do not change pointed value to zero if
-// we get error while converting cmd arg string
 func (i *intValue) Set(values ...string) error {
 	if len(values) == 0 {
 		return nil

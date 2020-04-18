@@ -52,7 +52,11 @@ type FlagSet struct {
 	CmdArgs         []string
 	posFlags        []posWithName
 	optFlags        map[string]*Flag
-	// OptPrefix       string
+	// following fields are used for state changes during parsing
+	iPos        int
+	curFlag     *Flag
+	curFlagName string
+	curFlagArgs []string
 }
 
 func NewFlagSet() *FlagSet {
@@ -236,85 +240,108 @@ func (fs *FlagSet) addFlagFromTag(value Value, tagValue string, fieldName string
 	return fs.Add(fl, names[0], names[1:]...)
 }
 
-func (fs *FlagSet) parse() error {
-	cmdArgs := fs.CmdArgs
+func (fs *FlagSet) writeAndCloseFlag() error {
+	if err := fs.curFlag.value.Set(fs.curFlagArgs...); err != nil {
+		return err
+	}
+	fs.curFlagName = ""
+	fs.curFlag = nil
+	fs.curFlagArgs = fs.curFlagArgs[:0]
+	return nil
+}
 
-	var iPos int
-	for iArgs, curState := 0, stateInit; iArgs < len(cmdArgs); {
-		curArg := cmdArgs[iArgs]
-		switch curState {
-		case stateInit:
+func (fs *FlagSet) processArg(arg string) error {
+	if arg != fs.curFlagName {
+		fs.curFlagArgs = append(fs.curFlagArgs, arg)
+	}
+	if len(fs.curFlagArgs) == fs.curFlag.nArgs {
+		return fs.writeAndCloseFlag()
+	}
+	return nil
+}
+
+func (fs *FlagSet) closeFlag() error {
+	if fs.curFlag.nArgs < 0 {
+		if len(fs.curFlagArgs) < 1 {
+			return fmt.Errorf("flag %s expects at least one argument", fs.curFlagName)
+		}
+		if err := fs.writeAndCloseFlag(); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("flag %s expects %d arguments, given %d", fs.curFlagName,
+			fs.curFlag.nArgs, len(fs.curFlagArgs))
+	}
+	return nil
+}
+
+func (fs *FlagSet) openFlag(curArg string, pos bool) error {
+	if pos {
+		fs.curFlagName = fs.posFlags[fs.iPos].name
+		fs.curFlag = fs.posFlags[fs.iPos].flag
+	} else {
+		fs.curFlagName = curArg
+		fs.curFlag = fs.optFlags[fs.curFlagName]
+	}
+	return fs.processArg(curArg)
+}
+
+func (fs *FlagSet) parse() error {
+	for _, curArg := range fs.CmdArgs {
+		// does it looks like an optional flag?
+		if strings.HasPrefix(curArg, defaultOptPrefix) {
+			// is it a help flag?
 			if curArg == helpShort || curArg == helpLong {
 				return &ErrHelpInvoked{}
 			}
-
-			// if curArg starts with the configured prefix then process it as an optional arg
-			if strings.HasPrefix(curArg, defaultOptPrefix) {
-				if _, found := fs.optFlags[curArg]; !found {
-					return fmt.Errorf("unknown optional flag: %s", curArg)
-				}
-				curState = stateOptFlag
-
-			} else if iPos < len(fs.posFlags) {
-				// if all positional flags have not been processed yet then consider
-				// curArg as the value for next positional arg
-				curState = statePosFlag
-			} else {
-				// since all defined positional and optional args have been processed, curArg
-				// is an undefined positional flag
-				return fmt.Errorf("no positional flag remaining to take argument %q", curArg)
+			// if this is not a known flag then return error
+			if _, ok := fs.optFlags[curArg]; !ok {
+				return fmt.Errorf("unrecognized flag %s", curArg)
 			}
-		case statePosFlag:
-			name := fs.posFlags[iPos].name
-			val := fs.posFlags[iPos].flag.value
-			nargs := fs.posFlags[iPos].flag.nArgs
-			given := len(cmdArgs) - iArgs
-			if nargs < 0 {
-				if err := val.Set(cmdArgs[iArgs:]...); err != nil {
-					return fmt.Errorf("error while setting flag '%s': %s", name, err)
+			// since this is a know flag so before starting  to process it, try closing the current
+			// pos/opt flag if any
+			if fs.curFlagName != "" {
+				if err := fs.closeFlag(); err != nil {
+					return err
 				}
-				iArgs = len(cmdArgs)
-			} else {
-				if given < nargs {
-					return fmt.Errorf("invalid no. of arguments for flag '%s'; required: %d, given: %d", name, nargs, given)
-				}
-				if err := val.Set(cmdArgs[iArgs : iArgs+nargs]...); err != nil {
-					return fmt.Errorf("error while setting flag '%s': %s", name, err)
-				}
-				iArgs += nargs
 			}
-			iPos++
-			curState = stateInit
-		case stateOptFlag:
-			name := curArg
-			val := fs.optFlags[name].value
-			nargs := fs.optFlags[name].nArgs
-			given := len(cmdArgs) - 1 - iArgs
-			if nargs < 0 { // unlimited no. of arguments
-				if given < 1 {
-					return fmt.Errorf("invalid no. of arguments for flag '%s'; required: at least one, given: 0", name)
-				}
-				if err := val.Set(cmdArgs[iArgs+1:]...); err != nil {
-					return fmt.Errorf("error while setting flag '%s': %s", name, err)
-				}
-				iArgs = len(cmdArgs)
-			} else if nargs > 0 { // limited no. of arguments
-				if given < nargs {
-					return fmt.Errorf("invalid no. of arguments for flag '%s'; required: %d, given: %d", name, nargs, given)
-				}
-				if err := val.Set(cmdArgs[iArgs+1 : iArgs+1+nargs]...); err != nil {
-					return fmt.Errorf("error while setting flag '%s': %s", name, err)
-				}
-				iArgs += nargs + 1
-			} else { // zero arguments i.e. a switch
-				val.Set()
-				iArgs++
+			// since this is a known opt flag, no flag is opened currently, open this flag for
+			// processing
+			if err := fs.openFlag(curArg, false); err != nil {
+				return err
 			}
-			curState = stateInit
+			continue
+		}
+		// if there is a pos/opt flag open then process current argument for it
+		if fs.curFlagName != "" {
+			if err := fs.processArg(curArg); err != nil {
+				return err
+			}
+			continue
+		}
+		// since there is no pos/opt flag open see if there are any pos flags that can be opened
+		// for processing this argument
+		if fs.iPos < len(fs.posFlags) {
+			if err := fs.openFlag(curArg, true); err != nil {
+				return err
+			}
+			fs.iPos++
+			continue
+		}
+		// since all pos/opt flags have been processed, current argument is unwanted/unrecognized
+		return fmt.Errorf("unrecognized argument: %s", curArg)
+	}
+	if fs.curFlagName != "" {
+		if err := fs.closeFlag(); err != nil {
+			return err
 		}
 	}
-	if iPos < len(fs.posFlags) {
-		return fmt.Errorf("Error: value for positional flag '%s' not given", fs.posFlags[iPos].name)
+	if fs.iPos < len(fs.posFlags) {
+		var names []string
+		for _, fl := range fs.posFlags[fs.iPos:] {
+			names = append(names, fl.name)
+		}
+		return fmt.Errorf("arguments are required for these flags: %v", strings.Join(names, ", "))
 	}
 	return nil
 }
@@ -385,7 +412,7 @@ func (fs *FlagSet) defaultUsage() {
 			fmt.Fprintf(out, "\n\n  %s\n\t%s", v.name, v.fl.usage)
 			continue
 		}
-		nargs := "Requires: 1 or more argument(s)"
+		nargs := "Requires: 1 or more arguments"
 		if v.fl.nArgs > 0 {
 			nargs = fmt.Sprintf("Requires: %v argument(s)", v.fl.nArgs)
 		}
