@@ -3,26 +3,26 @@
 
 # A Powerful Commandline Flags Parser for Go
 
-## Struct Tags Syntax
-```
-type <struct name> struct {
-    Field1    <field type>                                               // 'flagparse' struct tag not given hence ignored
-    Field2    <field type>    `flagparse:"<key=value>,<key=value>,..."   // 'flagparse' struct tag given hence parsed
-    Field3    <field type>    `flagparse:"<key=value>,<key=value>,..."   // 'flagparse' struct tag given hence parsed
-    ...
-}
-```
-**PS:** The fields must be public otherwise the `reflect` package will fail to parse the struct.
+Inspired by the Go's standard [flag package](https://golang.org/pkg/flag) and [Python's argparse module](https://docs.python.org/3/library/argparse.html).
 
-## Valid Tag Keys and Values
+## Features
+- Support for both positional and optional flags.
+- The flags can take multiple arguments from 0 to unlimited.
+- Built-in support for common types like bool, int, uint, etc. and their slice counterparts.
+- A simple interface similar to the standard flag package for using your own types with the package.
+- Concisely describe your flags using the simple struct tags based syntax. The API based approach is also supported.
 
-| Key | Mandatory | Value Type (Go) | Possible Values | Default | Description |
-| :---: | :---: | --- | :---: | :---: | :--- |
-| `positional` | no | `N/A` | `N/A` | `N/A` | create a positional argument if given otherwise create an optional argument |
-| `name` | no | string | a valid string containing alphanumeric charaters and/or '-' | struct field's name in lower case | the name to identify the flag with |
-| `nargs` | no | int | a valid int, give `0` if you want a switch flag | `1` | number of values required by the flag |
-| `help` | no | string | any valid string, escape `,` as `\\,`  | "" | help message for the user |
+### Future Enhancements
+- Support for mutually exclusive set of flags.
+- Constraint flag arguments to a pre-defined set of choices.
+- Support sub-commands like `git commit`, `docker container ls` etc.
 
-## Example
 
-For full examples please refer to `examples/`.
+## Installation
+`$ go get github.com/rsjethani/flagparse`
+
+## Usage
+
+Please visit [Go Docs Page](https://pkg.go.dev/github.com/rsjethani/flagparse) for detailed documentation and examples.
+
+## PS: The package in still under development so use with caution.
